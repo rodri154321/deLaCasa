@@ -1,0 +1,124 @@
+/* Shared polish layer for the bakery management UI. */
+
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b5c49a;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8e9a6d;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#8e9a6d] px-5 py-3 text-sm font-bold text-white shadow-sm shadow-[#6b7c54]/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#7a865f] hover:shadow-md disabled:pointer-events-none disabled:opacity-60;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#d7dec4] bg-white px-5 py-3 text-sm font-bold text-[#6b7c54] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#b5c49a] hover:bg-[#f5f5f0] hover:shadow-md disabled:pointer-events-none disabled:opacity-60;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-[#6b7c54] transition-colors duration-200 hover:bg-[#f5f5f0] hover:text-[#344033];
+}
+
+.card {
+  @apply rounded-2xl border border-[#d7dec4] bg-white shadow-sm shadow-[#6b7c54]/10 transition-all duration-200 hover:shadow-md;
+}
+
+.card-header {
+  @apply border-b border-[#e3e8d6] px-5 py-4 md:px-6;
+}
+
+.card-body {
+  @apply px-5 py-5 md:px-6;
+}
+
+.card-footer {
+  @apply border-t border-[#e3e8d6] bg-[#f8f4ea]/70 px-5 py-4 md:px-6;
+}
+
+.form-input {
+  @apply w-full rounded-xl border border-[#d7dec4] bg-white px-4 py-3 text-[#344033] transition-all duration-200 placeholder:text-[#9aa48b] focus:border-[#8e9a6d] focus:outline-none focus:ring-4 focus:ring-[#8e9a6d]/15;
+}
+
+.form-label {
+  @apply mb-2 block text-sm font-bold text-[#5d6d49];
+}
+
+.form-section {
+  @apply rounded-2xl border border-[#e3e8d6] bg-[#fbfaf5] p-4 md:p-6;
+}
+
+.badge-success {
+  @apply inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800;
+}
+
+.badge-warning {
+  @apply inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800;
+}
+
+.badge-danger {
+  @apply inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-800;
+}
+
+.badge-info {
+  @apply inline-flex items-center rounded-full bg-[#edf3e4] px-3 py-1 text-xs font-bold text-[#6b7c54];
+}
+
+.loading-skeleton {
+  @apply animate-pulse rounded-xl bg-[#e3e8d6];
+}
+
+.loading-spinner {
+  @apply h-5 w-5 animate-spin rounded-full border-2 border-white/80 border-t-transparent;
+}
+
+.page-container {
+  @apply mx-auto max-w-7xl px-4 py-6 md:px-6 lg:px-8;
+}
+
+.page-header {
+  @apply mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between;
+}
+
+.page-title {
+  @apply text-2xl font-extrabold text-[#344033] md:text-3xl;
+}
+
+.page-subtitle {
+  @apply mt-1 text-sm text-[#6b7c54] md:text-base;
+}
+
+.grid-responsive,
+.grid-cards {
+  @apply grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3;
+}
+
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-[#344033]/45 p-4 backdrop-blur-sm;
+}
+
+.modal-content {
+  @apply flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#d7dec4] bg-white shadow-2xl shadow-[#344033]/20;
+}
+
+.modal-header {
+  @apply flex items-center justify-between border-b border-[#e3e8d6] px-5 py-4 md:px-6;
+}
+
+.modal-body {
+  @apply overflow-y-auto px-5 py-5 md:px-6;
+}
+
+.modal-footer {
+  @apply flex flex-col-reverse gap-3 border-t border-[#e3e8d6] bg-[#fbfaf5] px-0 pt-5 sm:flex-row sm:justify-end;
+}
