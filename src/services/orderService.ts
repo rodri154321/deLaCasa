@@ -12,6 +12,8 @@ export async function createOrderWithItems(
     product_id: item.product_id,
     product_presentation_id: item.product_presentation_id,
     quantity: Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0,
+    unit_price: Number.isFinite(Number(item.unit_price)) ? Number(item.unit_price) : 0,
+    subtotal: Number.isFinite(Number(item.subtotal)) ? Number(item.subtotal) : 0,
   }));
 
   console.log('Order creation payload:', payload);

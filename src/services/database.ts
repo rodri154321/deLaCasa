@@ -80,7 +80,8 @@ export interface OrderItemPayload {
   product_id: string;
   product_presentation_id: string;
   quantity: number;
-  unit_price?: number; // Optional since RPC calculates it from presentation
+  unit_price: number;
+  subtotal: number;
 }
 
 export interface Database {

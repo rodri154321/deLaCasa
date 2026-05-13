@@ -85,13 +85,18 @@ BEGIN
     LOOP
         v_presentation_id := (v_item->>'product_presentation_id')::UUID;
         v_line_quantity := COALESCE((v_item->>'quantity')::INTEGER, 0);
+        v_unit_price := COALESCE((v_item->>'unit_price')::NUMERIC, 0);
 
         IF v_line_quantity <= 0 THEN
             RAISE EXCEPTION 'Order item quantity must be greater than 0';
         END IF;
 
-        SELECT pp.product_id, pp.quantity, COALESCE(pp.sale_price, 0)
-        INTO v_product_id, v_stock_units, v_unit_price
+        IF v_unit_price < 0 THEN
+            RAISE EXCEPTION 'Unit price cannot be negative';
+        END IF;
+
+        SELECT pp.product_id, pp.quantity
+        INTO v_product_id, v_stock_units
         FROM product_presentations pp
         JOIN products p ON p.id = pp.product_id
         WHERE pp.id = v_presentation_id
@@ -126,7 +131,7 @@ BEGIN
             v_unit_price
         );
 
-        v_total := v_total + (v_line_quantity * v_unit_price);
+        v_total := v_total + COALESCE((v_item->>'subtotal')::NUMERIC, (v_line_quantity * v_unit_price));
     END LOOP;
 
     UPDATE orders SET total_amount = v_total WHERE id = v_order_id;

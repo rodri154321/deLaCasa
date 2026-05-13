@@ -7,6 +7,8 @@ const initialItem: OrderItemPayload = {
   product_id: '',
   product_presentation_id: '',
   quantity: 1,
+  unit_price: 0,
+  subtotal: 0,
 };
 
 export default function CreateOrderForm() {
@@ -45,11 +47,35 @@ export default function CreateOrderForm() {
 
         if (field === 'product_presentation_id') {
           const option = activePresentationOptions.find(({ presentation }) => presentation.id === value);
+          if (!option) {
+            console.error('Presentation not found:', value);
+            return item;
+          }
+
+          const unitPrice = Number(option.presentation.sale_price || 0);
+          const quantity = Number(item.quantity || 0);
+          const subtotal = unitPrice * quantity;
+
+          console.log('Selected presentation:', option.presentation.name, 'Price:', unitPrice);
 
           return {
             ...item,
-            product_id: option?.product.id || '',
+            product_id: option.product.id,
             product_presentation_id: value,
+            unit_price: unitPrice,
+            subtotal: subtotal,
+          };
+        }
+
+        if (field === 'quantity') {
+          const quantity = Number(value);
+          const unitPrice = Number(item.unit_price || 0);
+          const subtotal = unitPrice * quantity;
+
+          return {
+            ...item,
+            quantity: quantity,
+            subtotal: subtotal,
           };
         }
 
@@ -78,7 +104,14 @@ export default function CreateOrderForm() {
 
   const isFormValid =
     customerName.trim().length > 0 &&
-    items.every((item) => item.product_id && item.product_presentation_id && item.quantity > 0);
+    items.every((item) => {
+      const hasValidPresentation = activePresentationOptions.some(({ presentation }) => presentation.id === item.product_presentation_id);
+      return item.product_id &&
+             item.product_presentation_id &&
+             item.quantity > 0 &&
+             item.unit_price >= 0 &&
+             hasValidPresentation;
+    });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -92,6 +125,7 @@ export default function CreateOrderForm() {
 
     try {
       console.log('Submitting order with items:', items);
+      console.log('ORDER ITEMS PAYLOAD:', items);
       const orderId = await addOrder(customerName, customerEmail, items);
       setMessage(`Orden creada exitosamente: ${orderId}`);
       setCustomerName('');
