@@ -31,6 +31,11 @@ WHERE NOT EXISTS (
     WHERE pp.product_id = p.id
 );
 
+-- Fix any NULL sale_price values in existing presentations
+UPDATE product_presentations
+SET sale_price = 0
+WHERE sale_price IS NULL;
+
 ALTER TABLE order_items
     ADD COLUMN IF NOT EXISTS product_presentation_id UUID REFERENCES product_presentations(id);
 
@@ -85,7 +90,7 @@ BEGIN
             RAISE EXCEPTION 'Order item quantity must be greater than 0';
         END IF;
 
-        SELECT pp.product_id, pp.quantity, pp.sale_price
+        SELECT pp.product_id, pp.quantity, COALESCE(pp.sale_price, 0)
         INTO v_product_id, v_stock_units, v_unit_price
         FROM product_presentations pp
         JOIN products p ON p.id = pp.product_id

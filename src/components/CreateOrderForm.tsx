@@ -28,6 +28,10 @@ export default function CreateOrderForm() {
       .map((presentation) => ({ product, presentation }))
   );
 
+  // Debug logging
+  console.log('Active products:', activeProducts.length);
+  console.log('Active presentation options:', activePresentationOptions.length);
+
   useEffect(() => {
     loadProducts().catch((error) => console.error(error));
   }, [loadProducts]);
@@ -87,6 +91,7 @@ export default function CreateOrderForm() {
     setMessage(null);
 
     try {
+      console.log('Submitting order with items:', items);
       const orderId = await addOrder(customerName, customerEmail, items);
       setMessage(`Orden creada exitosamente: ${orderId}`);
       setCustomerName('');

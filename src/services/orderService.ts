@@ -14,6 +14,8 @@ export async function createOrderWithItems(
     quantity: Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0,
   }));
 
+  console.log('Order creation payload:', payload);
+
   const { data, error } = await supabase.rpc(ORDER_RPC, {
     p_customer_name: customerName.trim(),
     p_customer_email: customerEmail.trim(),
@@ -21,6 +23,7 @@ export async function createOrderWithItems(
   });
 
   if (error) {
+    console.error('Supabase order creation error:', error);
     throw error;
   }
 

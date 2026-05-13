@@ -225,7 +225,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   addOrder: async (customerName, customerEmail, items) => {
     set({ isLoading: true, error: null });
     try {
+      console.log('Creating order with items:', items);
       const orderId = await createOrderWithItems(customerName, customerEmail, items);
+      console.log('Order created successfully:', orderId);
       set((state) => ({ orders: [...state.orders, { id: orderId, customer_name: customerName, customer_email: customerEmail, total_amount: 0, status: 'pending', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }] }));
       return orderId;
     } catch (error: unknown) {
