@@ -79,8 +79,8 @@ export default function ProductsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Productos</h1>
-        <p className="text-gray-600 text-lg">Administra tu catálogo de productos de panadería</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Gestión de Productos</h1>
+        <p className="text-gray-600 text-base md:text-lg">Administra tu catálogo de productos de panadería</p>
       </div>
 
       {/* Actions Bar */}

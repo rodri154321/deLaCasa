@@ -109,7 +109,7 @@ textarea:focus {
 .app-nav {
   position: fixed;
   inset: 0 auto 0 0;
-  z-index: 40;
+  z-index: 50;
   display: flex;
   width: 17.5rem;
   height: 100vh;
@@ -117,6 +117,18 @@ textarea:focus {
   border-right: 1px solid rgba(255, 255, 255, 0.28);
   background: linear-gradient(180deg, #6b7c54 0%, #8e9a6d 100%);
   box-shadow: 18px 0 40px rgba(52, 64, 51, 0.12);
+  transform: translateX(0);
+  transition: transform 0.3s ease-in-out;
+}
+
+.app-nav.mobile-hidden {
+  transform: translateX(-100%);
+}
+
+@media (min-width: 768px) {
+  .app-nav.mobile-hidden {
+    transform: translateX(0);
+  }
 }
 
 .app-nav-header {
@@ -185,6 +197,48 @@ textarea:focus {
   box-shadow: inset 4px 0 0 #f6d58f;
 }
 
+.app-nav-footer {
+  padding: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  margin-top: auto;
+}
+
+.mobile-nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(52, 64, 51, 0.5);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.mobile-nav-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-nav-toggle {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 60;
+  background: #8e9a6d;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.mobile-nav-toggle:hover {
+  background: #7a865f;
+  transform: scale(1.05);
+}
+
 .app-content {
   flex: 1;
   min-width: 0;
@@ -196,6 +250,18 @@ textarea:focus {
   max-width: 80rem;
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
+}
+
+@media (min-width: 640px) {
+  .app-main {
+    padding: 2rem 1.5rem 4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-main {
+    padding: 2rem 2rem 4rem;
+  }
 }
 
 .create-order-form,
@@ -256,47 +322,17 @@ textarea:focus {
   }
 }
 
-@media (max-width: 900px) {
-  .app-shell {
+@media (max-width: 768px) {
+  .mobile-nav-toggle {
     display: block;
   }
 
   .app-nav {
-    position: sticky;
-    top: 0;
-    width: 100%;
-    height: auto;
-    border-right: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+    z-index: 50;
   }
 
-  .app-nav-header {
-    flex-direction: row;
-    justify-content: flex-start;
-    padding: 0.75rem 1rem;
-  }
-
-  .app-nav-logo {
-    width: 3rem;
-    height: 3rem;
-  }
-
-  .app-nav-menu {
-    flex-direction: row;
-    gap: 0.5rem;
-    overflow-x: auto;
-    padding: 0.6rem 1rem 0.85rem;
-    scrollbar-width: none;
-  }
-
-  .app-nav-menu::-webkit-scrollbar {
-    display: none;
-  }
-
-  .app-nav a {
-    min-width: max-content;
-    min-height: 2.5rem;
-    padding: 0.62rem 0.85rem;
+  .app-nav.mobile-hidden {
+    transform: translateX(-100%);
   }
 
   .app-content {
@@ -304,7 +340,46 @@ textarea:focus {
   }
 
   .app-main {
-    padding-top: 1.25rem;
+    padding: 1rem 0.75rem 2rem;
+    max-width: none;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app-nav {
+    width: 15rem;
+  }
+
+  .app-content {
+    margin-left: 15rem;
+  }
+
+  .app-main {
+    padding: 1.5rem 1.5rem 3rem;
+    max-width: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-nav-header {
+    padding: 1rem;
+  }
+
+  .app-nav-title {
+    font-size: 1rem;
+  }
+
+  .app-nav-menu {
+    padding: 0.75rem 1rem;
+  }
+
+  .app-nav a {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .app-nav-footer {
+    padding: 1rem;
   }
 }
 

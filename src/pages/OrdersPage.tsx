@@ -17,8 +17,8 @@ export default function OrdersPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Órdenes</h1>
-        <p className="text-gray-600">Crea y administra las órdenes de tus clientes</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Gestión de Órdenes</h1>
+        <p className="text-gray-600 text-sm md:text-base">Crea y administra las órdenes de tus clientes</p>
       </div>
 
       {/* Create Order Form */}

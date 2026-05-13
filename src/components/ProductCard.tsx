@@ -71,13 +71,16 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
         <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 p-3">
           <p className="text-xs text-gray-500 mb-2">Presentaciones disponibles</p>
           {activePresentations.length > 0 ? (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {activePresentations.map((presentation) => (
-                <div key={presentation.id} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="font-medium text-gray-800">
-                    {presentation.name} ({safeToFixed(presentation.quantity, 0)} unid)
+                <div key={presentation.id} className="flex items-center justify-between gap-2 text-sm bg-white rounded-lg p-2 border border-gray-200">
+                  <span className="font-medium text-gray-800 truncate">
+                    {presentation.name}
                   </span>
-                  <span className="font-bold text-amber-700">${safeToFixed(presentation.sale_price)}</span>
+                  <div className="text-right flex-shrink-0">
+                    <div className="font-bold text-amber-700">${safeToFixed(presentation.sale_price)}</div>
+                    <div className="text-xs text-gray-500">{safeToFixed(presentation.quantity, 0)} unid</div>
+                  </div>
                 </div>
               ))}
             </div>

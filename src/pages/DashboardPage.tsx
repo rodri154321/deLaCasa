@@ -63,8 +63,8 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Panel de Control</h1>
-        <p className="text-gray-600 text-lg">Bienvenido a tu sistema de gestión de la Alfajoreria</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Panel de Control</h1>
+        <p className="text-gray-600 text-base md:text-lg">Bienvenido a tu sistema de gestión de la Alfajoreria</p>
       </div>
 
       {error && (
@@ -79,7 +79,7 @@ export default function DashboardPage() {
       )}
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {loading ? (
           <>
             {[1, 2, 3].map((i) => (
@@ -137,7 +137,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
         {/* Low Stock Alerts */}
         <div className="card">
           <div className="card-header">

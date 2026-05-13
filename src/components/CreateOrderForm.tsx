@@ -175,8 +175,8 @@ export default function CreateOrderForm() {
 
                   return (
                     <div key={index} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                        <div className="md:col-span-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
+                        <div className="sm:col-span-2 lg:col-span-5">
                           <label className="form-label">
                             Presentación *
                           </label>
@@ -195,7 +195,7 @@ export default function CreateOrderForm() {
                           </select>
                         </div>
 
-                        <div className="md:col-span-3">
+                        <div className="sm:col-span-1 lg:col-span-3">
                           <label className="form-label">
                             Cantidad *
                           </label>
@@ -210,7 +210,7 @@ export default function CreateOrderForm() {
                           />
                         </div>
 
-                        <div className="md:col-span-2">
+                        <div className="sm:col-span-1 lg:col-span-2">
                           <label className="form-label">
                             Precio Unit.
                           </label>
@@ -219,7 +219,7 @@ export default function CreateOrderForm() {
                           </div>
                         </div>
 
-                        <div className="md:col-span-2">
+                        <div className="sm:col-span-2 lg:col-span-2">
                           <div className="flex items-center justify-between">
                             <label className="form-label">
                               Subtotal

@@ -415,8 +415,8 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
               <div className="space-y-3">
                 {presentations.map((presentation, index) => (
                   <div key={presentation.id || index} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-                      <div className="md:col-span-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-start">
+                      <div className="sm:col-span-2 lg:col-span-4">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Nombre *
                         </label>
@@ -430,9 +430,9 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
                         />
                       </div>
 
-                      <div className="md:col-span-3">
+                      <div className="sm:col-span-1 lg:col-span-3">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Unidades que descuenta *
+                          Unidades *
                         </label>
                         <input
                           type="number"
@@ -446,9 +446,9 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
                         />
                       </div>
 
-                      <div className="md:col-span-3">
+                      <div className="sm:col-span-1 lg:col-span-3">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Precio de venta *
+                          Precio *
                         </label>
                         <input
                           type="number"
@@ -462,7 +462,7 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
                         />
                       </div>
 
-                      <div className="md:col-span-2 flex md:justify-end md:pt-7">
+                      <div className="sm:col-span-2 lg:col-span-2 flex justify-end pt-7">
                         <button
                           type="button"
                           onClick={() => removePresentation(index)}
