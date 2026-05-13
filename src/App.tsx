@@ -9,7 +9,7 @@ import ProductionPage from './pages/ProductionPage';
 import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout, isAuthenticated, refreshSession } from './services/authService';
-import logo from './assets/logopng.png';
+import logo from './assets/logopng.webp';
 
 function Navigation() {
   const navigate = useNavigate();
