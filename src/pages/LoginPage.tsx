@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/logopng.png';
+import logo from './assets/logopng.png';
 import { validatePassword, isAuthenticated } from '../services/authService';
 
 export default function LoginPage() {
