@@ -37,15 +37,15 @@ SET sale_price = 0
 WHERE sale_price IS NULL;
 
 ALTER TABLE order_items
-    ADD COLUMN IF NOT EXISTS product_presentation_id UUID REFERENCES product_presentations(id);
+    ADD COLUMN IF NOT EXISTS presentation_id UUID REFERENCES product_presentations(id);
 
 -- Existing order items are mapped to each product's Unidad presentation when possible.
 UPDATE order_items oi
-SET product_presentation_id = pp.id
+SET presentation_id = pp.id
 FROM product_presentations pp
 WHERE pp.product_id = oi.product_id
   AND pp.name = 'Unidad'
-  AND oi.product_presentation_id IS NULL;
+  AND oi.presentation_id IS NULL;
 
 ALTER TABLE order_items
     DROP CONSTRAINT IF EXISTS order_items_order_id_product_id_key;
@@ -54,13 +54,13 @@ ALTER TABLE order_items
     DROP CONSTRAINT IF EXISTS order_items_order_id_product_variant_id_key;
 
 ALTER TABLE order_items
-    ALTER COLUMN product_presentation_id SET NOT NULL;
+    ALTER COLUMN presentation_id SET NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_order_items_order_product_presentation
-    ON order_items(order_id, product_presentation_id);
+    ON order_items(order_id, presentation_id);
 
-CREATE INDEX IF NOT EXISTS idx_order_items_product_presentation_id
-    ON order_items(product_presentation_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_presentation_id
+    ON order_items(presentation_id);
 
 CREATE OR REPLACE FUNCTION insert_order_with_items(
     p_customer_name VARCHAR(255),
@@ -83,7 +83,7 @@ BEGIN
 
     FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
     LOOP
-        v_presentation_id := (v_item->>'product_presentation_id')::UUID;
+        v_presentation_id := (v_item->>'presentation_id')::UUID;
         v_line_quantity := COALESCE((v_item->>'quantity')::INTEGER, 0);
         v_unit_price := COALESCE((v_item->>'unit_price')::NUMERIC, 0);
 
@@ -119,7 +119,7 @@ BEGIN
         INSERT INTO order_items (
             order_id,
             product_id,
-            product_presentation_id,
+            presentation_id,
             quantity,
             unit_price
         )
@@ -150,7 +150,7 @@ SELECT
     oi.order_id,
     SUM(oi.quantity * pp.quantity * (ri.quantity * i.cost_per_unit)) AS order_cost
 FROM order_items oi
-JOIN product_presentations pp ON pp.id = oi.product_presentation_id
+JOIN product_presentations pp ON pp.id = oi.presentation_id
 JOIN latest_recipes lr ON lr.product_id = pp.product_id
 JOIN recipe_ingredients ri ON ri.recipe_id = lr.id
 JOIN ingredients i ON i.id = ri.ingredient_id
@@ -178,7 +178,7 @@ SELECT
     SUM(oi.quantity * pp.quantity) AS total_quantity,
     SUM(oi.quantity * oi.unit_price) AS sales_amount
 FROM order_items oi
-JOIN product_presentations pp ON pp.id = oi.product_presentation_id
+JOIN product_presentations pp ON pp.id = oi.presentation_id
 JOIN products p ON p.id = pp.product_id
 JOIN orders o ON o.id = oi.order_id
 WHERE o.status != 'cancelled'
@@ -198,7 +198,7 @@ BEGIN
     FOR v_item IN
         SELECT oi.quantity, pp.quantity AS presentation_quantity, r.id AS recipe_id
         FROM order_items oi
-        JOIN product_presentations pp ON pp.id = oi.product_presentation_id
+        JOIN product_presentations pp ON pp.id = oi.presentation_id
         JOIN recipes r ON r.product_id = pp.product_id
         WHERE oi.order_id = p_order_id
     LOOP

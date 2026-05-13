@@ -3,43 +3,127 @@
 -- Agregar costo por unidad para cálculos de ingredientes
 ALTER TABLE ingredients ADD COLUMN cost_per_unit DECIMAL(10,2) DEFAULT 0 CHECK (cost_per_unit >= 0);
 
+-- Actualizar tabla order_items para nuevo sistema
+ALTER TABLE order_items DROP CONSTRAINT IF EXISTS order_items_product_variant_id_fkey;
+ALTER TABLE order_items DROP COLUMN IF EXISTS product_variant_id;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS product_id UUID REFERENCES products(id);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS presentation_id UUID REFERENCES product_presentations(id);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_cost DECIMAL(10,2) DEFAULT 0 CHECK (unit_cost >= 0);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS subtotal DECIMAL(10,2) DEFAULT 0 CHECK (subtotal >= 0);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS profit DECIMAL(10,2) DEFAULT 0;
+-- Agregar índices si no existen
+CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_presentation_id ON order_items(presentation_id);
+
 -- 1. Lógica de Órdenes
 
--- Función para insertar orden con artículos
-CREATE OR REPLACE FUNCTION insert_order_with_items(
-    p_customer_name VARCHAR(255),
-    p_customer_email VARCHAR(255),
-    p_items JSONB -- Array of {product_variant_id: uuid, quantity: int}
-) RETURNS UUID AS $$
+CREATE OR REPLACE FUNCTION public.insert_order_with_items(
+    p_customer_name VARCHAR,
+    p_customer_email VARCHAR,
+    p_items JSONB
+)
+RETURNS UUID
+LANGUAGE plpgsql
+AS $$
 DECLARE
     v_order_id UUID;
     v_item JSONB;
-    v_total DECIMAL(10,2) := 0;
+
+    v_product_id UUID;
+    v_presentation_id UUID;
+
+    v_quantity INTEGER;
+
+    v_unit_price NUMERIC;
+    v_unit_cost NUMERIC;
+
+    v_subtotal NUMERIC;
+    v_profit NUMERIC;
+
+    v_total NUMERIC := 0;
 BEGIN
-    -- Insert order
-    INSERT INTO orders (customer_name, customer_email)
-    VALUES (p_customer_name, p_customer_email)
+
+    -- Crear orden
+    INSERT INTO orders (
+        customer_name,
+        customer_email,
+        total_amount,
+        status,
+        payment_status
+    )
+    VALUES (
+        p_customer_name,
+        NULLIF(p_customer_email, ''),
+        0,
+        'pending',
+        'unpaid'
+    )
     RETURNING id INTO v_order_id;
 
-    -- Insert items
-    FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
+    -- Procesar items
+    FOR v_item IN
+        SELECT * FROM jsonb_array_elements(p_items)
     LOOP
-        INSERT INTO order_items (order_id, product_variant_id, quantity, unit_price)
+
+        v_product_id :=
+            (v_item->>'product_id')::UUID;
+
+        v_presentation_id :=
+            (v_item->>'presentation_id')::UUID;
+
+        v_quantity :=
+            COALESCE((v_item->>'quantity')::INTEGER, 0);
+
+        v_unit_price :=
+            COALESCE((v_item->>'unit_price')::NUMERIC, 0);
+
+        v_unit_cost :=
+            COALESCE((v_item->>'unit_cost')::NUMERIC, 0);
+
+        v_subtotal :=
+            COALESCE((v_item->>'subtotal')::NUMERIC,
+            v_quantity * v_unit_price);
+
+        v_profit :=
+            COALESCE((v_item->>'profit')::NUMERIC,
+            v_subtotal - (v_quantity * v_unit_cost));
+
+        -- Insert item
+        INSERT INTO order_items (
+            order_id,
+            product_id,
+            presentation_id,
+            quantity,
+            unit_price,
+            unit_cost,
+            subtotal,
+            profit
+        )
         VALUES (
             v_order_id,
-            (v_item->>'product_variant_id')::UUID,
-            (v_item->>'quantity')::INTEGER,
-            (SELECT price FROM product_variants WHERE id = (v_item->>'product_variant_id')::UUID)
+            v_product_id,
+            v_presentation_id,
+            v_quantity,
+            v_unit_price,
+            v_unit_cost,
+            v_subtotal,
+            v_profit
         );
-        v_total := v_total + ((v_item->>'quantity')::INTEGER * (SELECT price FROM product_variants WHERE id = (v_item->>'product_variant_id')::UUID));
+
+        -- Acumular total
+        v_total := v_total + v_subtotal;
+
     END LOOP;
 
-    -- Update total_amount
-    UPDATE orders SET total_amount = v_total WHERE id = v_order_id;
+    -- Actualizar total orden
+    UPDATE orders
+    SET total_amount = v_total
+    WHERE id = v_order_id;
 
     RETURN v_order_id;
+
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Ejemplo de uso:
 -- SELECT insert_order_with_items('Jane Doe', 'jane@example.com', '[{"product_variant_id": "uuid1", "quantity": 2}, {"product_variant_id": "uuid2", "quantity": 1}]');

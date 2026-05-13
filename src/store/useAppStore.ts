@@ -2,7 +2,8 @@ import create from 'zustand';
 import { fetchProducts, createProduct, updateProduct, deleteProduct, ProductPayload } from '../services/productService';
 import { fetchIngredients, createIngredient, updateIngredient, deleteIngredient } from '../services/stockService';
 import { fetchRecipes, createRecipe, updateRecipe, deleteRecipe } from '../services/recipeService';
-import { createOrderWithItems, fetchOrders } from '../services/orderService';
+import { createOrderWithItems, fetchOrders, updateOrderStatus, updatePaymentStatus } from '../services/orderService';
+import { fetchFinanceMetrics, FinanceMetrics } from '../services/dashboardService';
 import type {
   Product,
   Ingredient,
@@ -16,6 +17,7 @@ type AppState = {
   orders: Order[];
   stock: Ingredient[];
   recipes: Recipe[];
+  financeMetrics: FinanceMetrics | null;
   isLoading: boolean;
   error: string | null;
   loadProducts: () => Promise<void>;
@@ -31,11 +33,14 @@ type AppState = {
   deleteRecipe: (id: string) => Promise<void>;
   loadOrders: () => Promise<void>;
   loadStock: () => Promise<void>;
+  loadFinanceMetrics: () => Promise<void>;
   addOrder: (
     customerName: string,
     customerEmail: string,
     items: OrderItemPayload[]
   ) => Promise<string>;
+  updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
+  updatePaymentStatus: (orderId: string, paymentStatus: Order['payment_status'], paymentMethod?: Order['payment_method']) => Promise<void>;
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -43,6 +48,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   orders: [],
   stock: [],
   recipes: [],
+  financeMetrics: null,
   isLoading: false,
   error: null,
   loadProducts: async () => {
@@ -222,18 +228,77 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ isLoading: false });
     }
   },
+  loadFinanceMetrics: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const financeMetrics = await fetchFinanceMetrics();
+      set({ financeMetrics });
+    } catch (error: unknown) {
+      console.error('loadFinanceMetrics failed:', error);
+      set({ error: (error as Error).message });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
   addOrder: async (customerName, customerEmail, items) => {
     set({ isLoading: true, error: null });
     try {
       console.log('Creating order with items:', items);
       const orderId = await createOrderWithItems(customerName, customerEmail, items);
       console.log('Order created successfully:', orderId);
-      set((state) => ({ orders: [...state.orders, { id: orderId, customer_name: customerName, customer_email: customerEmail, total_amount: 0, status: 'pending', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }] }));
+      set((state) => ({ orders: [...state.orders, {
+        id: orderId,
+        customer_name: customerName,
+        customer_email: customerEmail,
+        total_amount: 0,
+        status: 'pending' as Order['status'],
+        payment_status: 'unpaid' as Order['payment_status'],
+        payment_method: null,
+        delivered_at: null,
+        paid_at: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }] }));
       return orderId;
     } catch (error: unknown) {
       console.error('addOrder failed:', error);
       set({ error: (error as Error).message });
       throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  updateOrderStatus: async (orderId, status) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedOrder = await updateOrderStatus(orderId, status);
+      set((state) => ({
+        orders: state.orders.map((order) =>
+          order.id === orderId ? updatedOrder : order
+        ),
+      }));
+    } catch (error: unknown) {
+      console.error('updateOrderStatus failed:', error);
+      set({ error: (error as Error).message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  updatePaymentStatus: async (orderId, paymentStatus, paymentMethod) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedOrder = await updatePaymentStatus(orderId, paymentStatus, paymentMethod);
+      set((state) => ({
+        orders: state.orders.map((order) =>
+          order.id === orderId ? updatedOrder : order
+        ),
+      }));
+      // Reload finance metrics after payment status change
+      await get().loadFinanceMetrics();
+    } catch (error: unknown) {
+      console.error('updatePaymentStatus failed:', error);
+      set({ error: (error as Error).message });
     } finally {
       set({ isLoading: false });
     }

@@ -5,10 +5,12 @@ import { safeToFixed } from '../utils/formatters';
 
 const initialItem: OrderItemPayload = {
   product_id: '',
-  product_presentation_id: '',
+  presentation_id: '',
   quantity: 1,
   unit_price: 0,
+  unit_cost: 0,
   subtotal: 0,
+  profit: 0,
 };
 
 export default function CreateOrderForm() {
@@ -45,7 +47,7 @@ export default function CreateOrderForm() {
           return item;
         }
 
-        if (field === 'product_presentation_id') {
+        if (field === 'presentation_id') {
           const option = activePresentationOptions.find(({ presentation }) => presentation.id === value);
           if (!option) {
             console.error('Presentation not found:', value);
@@ -53,29 +55,36 @@ export default function CreateOrderForm() {
           }
 
           const unitPrice = Number(option.presentation.sale_price || 0);
+          const unitCost = Number(option.product.estimated_cost || 0);
           const quantity = Number(item.quantity || 0);
           const subtotal = unitPrice * quantity;
+          const profit = subtotal - (unitCost * quantity);
 
-          console.log('Selected presentation:', option.presentation.name, 'Price:', unitPrice);
+          console.log('Selected presentation:', option.presentation.name, 'Price:', unitPrice, 'Cost:', unitCost);
 
           return {
             ...item,
             product_id: option.product.id,
-            product_presentation_id: value,
+            presentation_id: value,
             unit_price: unitPrice,
+            unit_cost: unitCost,
             subtotal: subtotal,
+            profit: profit,
           };
         }
 
         if (field === 'quantity') {
           const quantity = Number(value);
           const unitPrice = Number(item.unit_price || 0);
+          const unitCost = Number(item.unit_cost || 0);
           const subtotal = unitPrice * quantity;
+          const profit = subtotal - (unitCost * quantity);
 
           return {
             ...item,
             quantity: quantity,
             subtotal: subtotal,
+            profit: profit,
           };
         }
 
@@ -97,7 +106,7 @@ export default function CreateOrderForm() {
 
   const orderTotal = items.reduce((total, item) => {
     const product = products.find((p) => p.id === item.product_id);
-    const presentation = product?.product_presentations?.find((p) => p.id === item.product_presentation_id);
+    const presentation = product?.product_presentations?.find((p) => p.id === item.presentation_id);
     const price = presentation?.sale_price ?? 0;
     return total + price * item.quantity;
   }, 0);
@@ -105,9 +114,9 @@ export default function CreateOrderForm() {
   const isFormValid =
     customerName.trim().length > 0 &&
     items.every((item) => {
-      const hasValidPresentation = activePresentationOptions.some(({ presentation }) => presentation.id === item.product_presentation_id);
+      const hasValidPresentation = activePresentationOptions.some(({ presentation }) => presentation.id === item.presentation_id);
       return item.product_id &&
-             item.product_presentation_id &&
+             item.presentation_id &&
              item.quantity > 0 &&
              item.unit_price >= 0 &&
              hasValidPresentation;
@@ -208,20 +217,20 @@ export default function CreateOrderForm() {
               <div className="space-y-4">
                 {items.map((item, index) => {
                   const selectedProduct = activeProducts.find(p => p.id === item.product_id);
-                  const selectedPresentation = selectedProduct?.product_presentations?.find((presentation) => presentation.id === item.product_presentation_id);
+                  const selectedPresentation = selectedProduct?.product_presentations?.find((presentation) => presentation.id === item.presentation_id);
                   const subtotal = selectedPresentation ? selectedPresentation.sale_price * item.quantity : 0;
                   const stockUnits = selectedPresentation ? selectedPresentation.quantity * item.quantity : 0;
 
                   return (
-                    <div key={index} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
+                    <div key={index} className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl p-4 md:p-6 border border-gray-200 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 md:gap-4 items-end">
                         <div className="sm:col-span-2 lg:col-span-5">
                           <label className="form-label">
                             Presentación *
                           </label>
                           <select
-                            value={item.product_presentation_id}
-                            onChange={(event) => handleItemChange(index, 'product_presentation_id', event.target.value)}
+                            value={item.presentation_id}
+                            onChange={(event) => handleItemChange(index, 'presentation_id', event.target.value)}
                             className="form-input"
                             required
                           >

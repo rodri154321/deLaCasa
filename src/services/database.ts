@@ -1,10 +1,21 @@
 export type OrderStatus =
   | 'pending'
-  | 'confirmed'
   | 'preparing'
   | 'ready'
   | 'delivered'
   | 'cancelled';
+
+export type PaymentStatus =
+  | 'unpaid'
+  | 'paid'
+  | 'partial';
+
+export type PaymentMethod =
+  | 'cash'
+  | 'transfer'
+  | 'debit'
+  | 'credit'
+  | 'mercadopago';
 
 export interface Order {
   id: string;
@@ -12,6 +23,10 @@ export interface Order {
   customer_email: string | null;
   total_amount: number;
   status: OrderStatus;
+  payment_status: PaymentStatus;
+  payment_method?: PaymentMethod | null;
+  delivered_at?: string | null;
+  paid_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -78,10 +93,12 @@ export interface RecipeIngredient {
 
 export interface OrderItemPayload {
   product_id: string;
-  product_presentation_id: string;
+  presentation_id: string;
   quantity: number;
   unit_price: number;
+  unit_cost: number;
   subtotal: number;
+  profit: number;
 }
 
 export interface Database {
@@ -156,30 +173,36 @@ export interface Database {
           created_at: string;
         }>;
       };
-      order_items: {
-        Row: {
-          id: string;
-          order_id: string;
-          product_id: string;
-          product_presentation_id: string;
-          quantity: number;
-          unit_price: number;
-          created_at: string;
-        };
-        Insert: Omit<
-          { id: string; order_id: string; product_id: string; product_presentation_id: string; quantity: number; unit_price: number; created_at: string },
-          'id' | 'created_at'
-        >;
-        Update: Partial<{
-          id: string;
-          order_id: string;
-          product_id: string;
-          product_presentation_id: string;
-          quantity: number;
-          unit_price: number;
-          created_at: string;
-        }>;
-      };
+       order_items: {
+         Row: {
+           id: string;
+           order_id: string;
+           product_id: string;
+           presentation_id: string;
+           quantity: number;
+           unit_price: number;
+           unit_cost: number;
+           subtotal: number;
+           profit: number;
+           created_at: string;
+         };
+         Insert: Omit<
+           { id: string; order_id: string; product_id: string; presentation_id: string; quantity: number; unit_price: number; unit_cost: number; subtotal: number; profit: number; created_at: string },
+           'id' | 'created_at'
+         >;
+         Update: Partial<{
+           id: string;
+           order_id: string;
+           product_id: string;
+           presentation_id: string;
+           quantity: number;
+           unit_price: number;
+           unit_cost: number;
+           subtotal: number;
+           profit: number;
+           created_at: string;
+         }>;
+       };
       product_presentations: {
         Row: ProductPresentation;
         Insert: Omit<ProductPresentation, 'id' | 'created_at'> & {
