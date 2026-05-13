@@ -53,7 +53,7 @@ export default function LoginPage() {
               className="w-24 h-24 mx-auto mb-4 rounded-xl shadow-lg"
             />
             <h1 className="text-3xl font-bold text-gray-900 mb-2">DeLaCasa</h1>
-            <p className="text-gray-600">Sistema de Gestión de Panadería</p>
+            <p className="text-gray-600">Sistema de Gestión de Alfajoreria</p>
           </div>
 
           {/* Login Form */}
@@ -99,7 +99,7 @@ export default function LoginPage() {
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-xs text-gray-500">
-              Sistema de gestión interno - DeLaCasa Bakery
+              Sistema de gestión interno - DeLaCasa Alfajoreria. &copy; 2024 Todos los derechos reservados.
             </p>
           </div>
         </div>
