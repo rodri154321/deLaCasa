@@ -4,7 +4,19 @@ import { safeToFixed } from '../utils/formatters';
 import type { Recipe, RecipeIngredient, Product, Ingredient } from '../services/database';
 
 interface RecipeFormProps {
-  recipe?: Recipe;
+  recipe?: Recipe & {
+    products?: { id: string; name: string };
+    recipe_ingredients?: Array<{
+      id: string;
+      quantity: number;
+      ingredients?: {
+        id: string;
+        name: string;
+        unit: string;
+        cost_per_unit: number;
+      };
+    }>;
+  };
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (recipe: Omit<Recipe, 'id' | 'created_at' | 'updated_at'>, ingredients: Omit<RecipeIngredient, 'id' | 'recipe_id'>[]) => void;
@@ -56,9 +68,9 @@ export default function RecipeForm({ recipe, isOpen, onClose, onSubmit, isLoadin
       });
 
       // If we have recipe_ingredients, populate them
-      const existingIngredients = (recipe as any).recipe_ingredients || [];
+      const existingIngredients = recipe.recipe_ingredients || [];
       if (existingIngredients.length > 0) {
-        const rows: RecipeIngredientRow[] = existingIngredients.map((ri: any, index: number) => ({
+        const rows: RecipeIngredientRow[] = existingIngredients.map((ri, index: number) => ({
           id: (index + 1).toString(),
           ingredient_id: ri.ingredients?.id || '',
           quantity: ri.quantity.toString(),
@@ -185,12 +197,13 @@ export default function RecipeForm({ recipe, isOpen, onClose, onSubmit, isLoadin
     }
   };
 
-  const availableIngredients = ingredients.filter(ing =>
-    ing.current_stock > 0
-  );
+  const availableIngredients = ingredients;
 
   const totalCost = calculateTotalCost();
-  const isValid = Boolean(formData.name.trim() && formData.product_id) && !Object.values(errors).some(error => error);
+  const isValid = Boolean(formData.name.trim() && formData.product_id && products.length > 0 && ingredients.length > 0) && !Object.values(errors).some(error => error);
+
+  // Show loading state if data is not loaded yet
+  const isDataLoading = products.length === 0 || ingredients.length === 0;
 
   if (!isOpen) return null;
 
@@ -207,7 +220,17 @@ export default function RecipeForm({ recipe, isOpen, onClose, onSubmit, isLoadin
         </div>
 
         <div className="modal-body">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {isDataLoading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#8e9a6d] border-t-transparent mx-auto mb-4"></div>
+                <p className="text-[#6b7c54]">Cargando datos...</p>
+              </div>
+            </div>
+          )}
+
+          {!isDataLoading && (
+            <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -241,8 +264,10 @@ export default function RecipeForm({ recipe, isOpen, onClose, onSubmit, isLoadin
                   }`}
                   required
                 >
-                  <option value="">Seleccionar producto</option>
-                  {products.filter(p => p.active !== false).map((product) => (
+                  <option value="">
+                    {products.length === 0 ? 'Cargando productos...' : 'Seleccionar producto'}
+                  </option>
+                  {products.map((product) => (
                     <option key={product.id} value={product.id}>
                       {product.name}
                     </option>
@@ -296,7 +321,9 @@ export default function RecipeForm({ recipe, isOpen, onClose, onSubmit, isLoadin
                           onChange={(e) => handleIngredientChange(row.id, 'ingredient_id', e.target.value)}
                           className="form-input"
                         >
-                          <option value="">Seleccionar ingrediente</option>
+                          <option value="">
+                            {ingredients.length === 0 ? 'Cargando ingredientes...' : 'Seleccionar ingrediente'}
+                          </option>
                           {availableIngredients.map((ingredient) => (
                             <option key={ingredient.id} value={ingredient.id}>
                               {ingredient.name} ({ingredient.unit}) - Stock: {safeToFixed(ingredient.current_stock)}
@@ -377,6 +404,7 @@ export default function RecipeForm({ recipe, isOpen, onClose, onSubmit, isLoadin
               </button>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>

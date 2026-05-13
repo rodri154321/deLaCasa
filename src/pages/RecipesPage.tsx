@@ -2,11 +2,16 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import RecipeCard from '../components/RecipeCard';
 import RecipeForm from '../components/RecipeForm';
+import { fetchRecipeById } from '../services/recipeService';
 import type { Recipe } from '../services/database';
 
 export default function RecipesPage() {
   const recipes = useAppStore((state) => state.recipes);
+  const products = useAppStore((state) => state.products);
+  const stock = useAppStore((state) => state.stock);
   const loadRecipes = useAppStore((state) => state.loadRecipes);
+  const loadProducts = useAppStore((state) => state.loadProducts);
+  const loadStock = useAppStore((state) => state.loadStock);
   const createRecipe = useAppStore((state) => state.createRecipe);
   const updateRecipe = useAppStore((state) => state.updateRecipe);
   const deleteRecipe = useAppStore((state) => state.deleteRecipe);
@@ -15,12 +20,26 @@ export default function RecipesPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>();
+  const [editingRecipe, setEditingRecipe] = useState<(Recipe & {
+    products?: { id: string; name: string };
+    recipe_ingredients?: Array<{
+      id: string;
+      quantity: number;
+      ingredients?: {
+        id: string;
+        name: string;
+        unit: string;
+        cost_per_unit: number;
+      };
+    }>;
+  }) | undefined>();
   const [successMessage, setSuccessMessage] = useState<string>('');
 
   useEffect(() => {
     loadRecipes().catch(console.error);
-  }, [loadRecipes]);
+    loadProducts().catch(console.error);
+    loadStock().catch(console.error);
+  }, [loadRecipes, loadProducts, loadStock]);
 
   const filteredRecipes = recipes.filter((recipe) =>
     recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,8 +83,13 @@ export default function RecipesPage() {
     }
   };
 
-  const handleEditRecipe = (recipe: Recipe) => {
-    setEditingRecipe(recipe);
+  const handleEditRecipe = async (recipe: Recipe) => {
+    try {
+      const fullRecipe = await fetchRecipeById(recipe.id);
+      setEditingRecipe(fullRecipe);
+    } catch (error) {
+      console.error('Error fetching recipe for edit:', error);
+    }
   };
 
   const closeEditModal = () => {

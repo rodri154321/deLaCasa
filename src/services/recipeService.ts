@@ -215,10 +215,13 @@ async function calculateRecipeCost(ingredients: Omit<RecipeIngredient, 'id' | 'r
     .in('id', ingredientIds);
 
   if (error) {
+    console.error('calculateRecipeCost: Error fetching ingredients:', error);
     throw error;
   }
 
-  const costMap = new Map(ingredientData.map(ing => [ing.id, ing.cost_per_unit]));
+  // Safe null check for ingredientData
+  const safeIngredientData = ingredientData || [];
+  const costMap = new Map(safeIngredientData.map(ing => [ing.id, Number(ing.cost_per_unit || 0)]));
 
   return ingredients.reduce((total, ing) => {
     const costPerUnit = costMap.get(ing.ingredient_id) || 0;
