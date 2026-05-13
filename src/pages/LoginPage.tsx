@@ -99,7 +99,7 @@ export default function LoginPage() {
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-xs text-gray-500">
-              Sistema de gestión interno - DeLaCasa Alfajoreria. &copy; 2024 Todos los derechos reservados.
+              Sistema de gestión interno - DeLaCasa Alfajoreria. &copy; 2026 Todos los derechos reservados.
             </p>
           </div>
         </div>
