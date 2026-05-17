@@ -76,7 +76,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="w-full min-w-0 space-y-6 md:space-y-8">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Gestión de Productos</h1>
@@ -84,8 +84,8 @@ export default function ProductsPage() {
       </div>
 
       {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center">
+        <div className="relative w-full flex-1 sm:max-w-md">
           <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -100,7 +100,7 @@ export default function ProductsPage() {
 
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="btn-primary"
+          className="btn-primary w-full sm:w-auto"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -134,7 +134,7 @@ export default function ProductsPage() {
 
       {/* Products Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="card p-6">
               <div className="loading-skeleton h-6 w-32 mb-2"></div>
@@ -175,7 +175,7 @@ export default function ProductsPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}

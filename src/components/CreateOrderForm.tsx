@@ -156,7 +156,7 @@ export default function CreateOrderForm() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full min-w-0 lg:max-w-4xl lg:mx-auto">
       <div className="card">
         <div className="card-header">
           <h2 className="text-2xl font-bold text-gray-900">Crear Nueva Orden</h2>
@@ -164,11 +164,11 @@ export default function CreateOrderForm() {
         </div>
 
         <div className="card-body">
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
             {/* Customer Information */}
             <div className="form-section">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Información del Cliente</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div>
                   <label className="form-label">
                     Nombre del Cliente *
@@ -200,12 +200,12 @@ export default function CreateOrderForm() {
 
             {/* Order Items */}
             <div className="form-section">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Productos</h3>
                 <button
                   type="button"
                   onClick={addLineItem}
-                  className="btn-secondary"
+                  className="btn-secondary w-full sm:w-auto"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -222,7 +222,7 @@ export default function CreateOrderForm() {
                   const stockUnits = selectedPresentation ? selectedPresentation.quantity * item.quantity : 0;
 
                   return (
-                    <div key={index} className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl p-4 md:p-6 border border-gray-200 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <div key={index} className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md min-w-0">
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 md:gap-4 items-end">
                         <div className="sm:col-span-2 lg:col-span-5">
                           <label className="form-label">
@@ -268,7 +268,7 @@ export default function CreateOrderForm() {
                         </div>
 
                         <div className="sm:col-span-2 lg:col-span-2">
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-3">
                             <label className="form-label">
                               Subtotal
                             </label>
@@ -284,7 +284,7 @@ export default function CreateOrderForm() {
                         </div>
 
                         {items.length > 1 && (
-                          <div className="md:col-span-1 flex justify-end">
+                          <div className="sm:col-span-2 lg:col-span-1 flex justify-end">
                             <button
                               type="button"
                               onClick={() => removeLineItem(index)}
@@ -305,8 +305,8 @@ export default function CreateOrderForm() {
             </div>
 
             {/* Order Summary */}
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-200">
-              <div className="flex items-center justify-between">
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 md:p-6 border border-amber-200">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">Resumen de la Orden</h3>
                   <p className="text-gray-600">{items.length} producto{items.length !== 1 ? 's' : ''}</p>
@@ -319,11 +319,11 @@ export default function CreateOrderForm() {
             </div>
 
             {/* Form Actions */}
-            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-6 border-t border-gray-200">
               <button
                 type="submit"
                 disabled={isSubmitting || !isFormValid}
-                className="btn-primary"
+                className="btn-primary w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <>

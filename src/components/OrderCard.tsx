@@ -106,10 +106,10 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-200 group">
+    <div className="w-full min-w-0 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-200 group">
       {/* Collapsed Header */}
       <div className="p-4 md:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 min-w-0">
           <div className="flex items-center space-x-3 md:space-x-4 flex-1 min-w-0">
             <div className="bg-gradient-to-br from-blue-100 to-blue-50 p-2 md:p-3 rounded-xl group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
               <svg className="w-5 h-5 md:w-6 md:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +128,7 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
           </div>
 
           {/* Mobile: Stack vertically, Desktop: Horizontal */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:space-x-0 sm:ml-4">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3 sm:space-x-0 sm:ml-4">
             <div className="flex items-center justify-between sm:justify-end gap-3">
               <p className="text-lg md:text-xl font-bold text-amber-600">${safeToFixed(order.total_amount)}</p>
 
@@ -226,12 +226,12 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
           </div>
 
           {/* Quick Actions */}
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="grid grid-cols-1 gap-2 mb-4 sm:flex sm:flex-wrap">
             {order.status === 'pending' && (
               <button
                 onClick={() => handleStatusChange('preparing')}
                 disabled={isUpdating}
-                className="px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                className="w-full sm:w-auto px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
               >
                 <span className="hidden sm:inline flex items-center gap-1.5">
                   <span>👨‍🍳</span>
@@ -247,7 +247,7 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
               <button
                 onClick={() => handleStatusChange('ready')}
                 disabled={isUpdating}
-                className="px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                className="w-full sm:w-auto px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
               >
                 <span className="hidden sm:inline flex items-center gap-1.5">
                   <span>✅</span>
@@ -263,7 +263,7 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
               <button
                 onClick={() => handleStatusChange('delivered')}
                 disabled={isUpdating}
-                className="px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-semibold rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                className="w-full sm:w-auto px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-semibold rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
               >
                 <span className="hidden sm:inline flex items-center gap-1.5">
                   <span>🚚</span>
@@ -279,7 +279,7 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
               <button
                 onClick={() => handlePaymentStatusChange('paid')}
                 disabled={isUpdating}
-                className="px-3 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-semibold rounded-lg hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                className="w-full sm:w-auto px-3 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-semibold rounded-lg hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
               >
                 <span className="hidden sm:inline flex items-center gap-1.5">
                   <span>💰</span>
@@ -296,22 +296,22 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
           <div className="border-t border-gray-200 pt-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-sm font-medium text-gray-600">ID de Orden:</span>
                   <span className="text-sm font-mono text-gray-800 bg-gray-100 px-2 py-1 rounded">{order.id.slice(-8)}</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-sm font-medium text-gray-600">Total:</span>
                   <span className="text-lg font-bold text-amber-600">${safeToFixed(order.total_amount)}</span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-sm font-medium text-gray-600">Creada:</span>
                   <span className="text-sm text-gray-800">{new Date(order.created_at).toLocaleString('es-ES')}</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-sm font-medium text-gray-600">Actualizada:</span>
                   <span className="text-sm text-gray-800">{new Date(order.updated_at).toLocaleString('es-ES')}</span>
                 </div>

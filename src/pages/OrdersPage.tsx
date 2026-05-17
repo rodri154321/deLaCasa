@@ -23,9 +23,9 @@ export default function OrdersPage() {
   }, [loadOrders]);
 
   return (
-    <div className="space-y-8">
+    <div className="w-full min-w-0 space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="text-center">
+      <div className="text-center px-1">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Gestión de Órdenes</h1>
         <p className="text-gray-600 text-sm md:text-base">Crea y administra las órdenes de tus clientes</p>
       </div>
@@ -55,7 +55,7 @@ export default function OrdersPage() {
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
+                <div key={i} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:space-x-4 p-4 bg-gray-50 rounded-xl">
                   <div className="loading-skeleton h-4 w-32"></div>
                   <div className="loading-skeleton h-4 w-24"></div>
                   <div className="loading-skeleton h-6 w-16 rounded-full"></div>

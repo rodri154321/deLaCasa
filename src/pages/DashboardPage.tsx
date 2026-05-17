@@ -113,10 +113,10 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="w-full min-w-0 space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Panel de Control</h1>
+      <div className="text-center px-1">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 leading-tight">Panel de Control</h1>
         <p className="text-gray-600 text-base md:text-lg">Bienvenido a tu sistema de gestión de la Alfajoreria</p>
       </div>
 
@@ -209,7 +209,7 @@ export default function DashboardPage() {
       {/* Recent Orders */}
       <div className="card hover:shadow-xl transition-shadow duration-300">
         <div className="card-header bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-w-0">
             <div className="flex items-center gap-3">
               <div className="bg-blue-100 p-2 rounded-lg">
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,11 +220,11 @@ export default function DashboardPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-2">
+            <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
+                className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
               >
                 <option value="all">📊 Todos los estados</option>
                 <option value="pending">⏳ Pendientes</option>
@@ -237,7 +237,7 @@ export default function DashboardPage() {
               <select
                 value={paymentFilter}
                 onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | 'all')}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
+                className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
               >
                 <option value="all">💰 Todos los pagos</option>
                 <option value="unpaid">❌ Impagos</option>
@@ -252,7 +252,7 @@ export default function DashboardPage() {
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div key={i} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-xl">
                   <div className="flex items-center space-x-3">
                     <div className="loading-skeleton h-4 w-24"></div>
                     <div className="loading-skeleton h-3 w-32"></div>
@@ -404,20 +404,20 @@ export default function DashboardPage() {
       <div className="card bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
         <div className="card-body">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <a href="/orders" className="btn-secondary text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+            <a href="/orders" className="btn-secondary text-center w-full">
               Nueva Orden
             </a>
-            <a href="/products" className="btn-secondary text-center">
+            <a href="/products" className="btn-secondary text-center w-full">
               Agregar Producto
             </a>
-            <a href="/recipes" className="btn-secondary text-center">
+            <a href="/recipes" className="btn-secondary text-center w-full">
               Crear Receta
             </a>
-            <a href="/stock" className="btn-secondary text-center">
+            <a href="/stock" className="btn-secondary text-center w-full">
               Gestionar Stock
             </a>
-            <a href="/finance" className="btn-secondary text-center">
+            <a href="/finance" className="btn-secondary text-center w-full">
               Ver Finanzas
             </a>
           </div>

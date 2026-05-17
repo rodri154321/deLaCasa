@@ -81,10 +81,10 @@ export default function DashboardOrderCard({ order, onRefresh }: DashboardOrderC
   const orderSummary = order.items.map(item => `${item.quantity}x ${item.product_name}${item.presentation_name ? ` (${item.presentation_name})` : ''}`).join(', ');
 
   return (
-    <div className={`rounded-2xl border border-[#d7dec4] shadow-sm shadow-[#6b7c54]/10 transition-all duration-200 hover:shadow-md ${order.status === 'delivered' && order.payment_status === 'paid' ? 'bg-[#f8f4ea]/70' : 'bg-[#f5f5f0]'}`}>
+    <div className={`w-full min-w-0 rounded-2xl border border-[#d7dec4] shadow-sm shadow-[#6b7c54]/10 transition-all duration-200 hover:shadow-md ${order.status === 'delivered' && order.payment_status === 'paid' ? 'bg-[#f8f4ea]/70' : 'bg-[#f5f5f0]'}`}>
       <div className="p-4">
         <div className="flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 min-w-0">
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-gray-900 text-sm md:text-base truncate">{order.customer_name}</h3>
               <p className="text-xs md:text-sm text-gray-600 truncate">{orderSummary}</p>
@@ -121,7 +121,7 @@ export default function DashboardOrderCard({ order, onRefresh }: DashboardOrderC
               <button
                 onClick={handleMarkPaid}
                 disabled={isUpdating}
-                className="btn-primary text-xs px-3 py-2 flex-1 sm:flex-none rounded-xl"
+                className="btn-primary w-full text-xs px-3 py-2 flex-1 sm:w-auto sm:flex-none rounded-xl"
               >
                 {isUpdating ? 'Actualizando...' : 'Marcar pagada'}
               </button>
@@ -135,7 +135,7 @@ export default function DashboardOrderCard({ order, onRefresh }: DashboardOrderC
               <button
                 onClick={handleMarkDelivered}
                 disabled={isUpdating}
-                className="btn-primary text-xs px-3 py-2 flex-1 sm:flex-none rounded-xl"
+                className="btn-primary w-full text-xs px-3 py-2 flex-1 sm:w-auto sm:flex-none rounded-xl"
               >
                 {isUpdating ? 'Actualizando...' : 'Marcar entregada'}
               </button>

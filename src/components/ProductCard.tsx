@@ -42,7 +42,7 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
           <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
         )}
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-4">
           <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 rounded-xl">
             <p className="text-xs text-emerald-600 font-medium mb-1">Presentaciones</p>
             <p className="text-lg font-bold text-emerald-900">{activePresentations.length}</p>
@@ -96,10 +96,10 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
           </div>
         )}
 
-        <div className="flex justify-end space-x-2 pt-4 border-t border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-4 border-t border-gray-100">
           <button
             onClick={() => onEdit(product)}
-            className="btn-ghost"
+            className="btn-ghost w-full sm:w-auto"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -108,7 +108,7 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
           </button>
           <button
             onClick={() => onDelete(product.id)}
-            className="text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors"
+            className="w-full sm:w-auto text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
