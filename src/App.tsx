@@ -35,7 +35,7 @@ function Navigation() {
       {/* Mobile Navigation Toggle */}
       <button
         onClick={toggleMobileMenu}
-        className="mobile-nav-toggle md:hidden"
+        className="mobile-nav-toggle"
         aria-label="Toggle navigation menu"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,7 +54,7 @@ function Navigation() {
         onClick={closeMobileMenu}
       />
 
-      <nav className={`app-nav md:block ${isMobileMenuOpen ? '' : 'mobile-hidden md:block'}`}>
+      <nav className={`app-nav ${isMobileMenuOpen ? '' : 'mobile-hidden'}`}>
         <div className="app-nav-header">
           <img src={logo} alt="deLaCasa" className="app-nav-logo" />
           <h1 className="app-nav-title">DeLaCasa</h1>

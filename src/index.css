@@ -136,7 +136,7 @@ textarea:focus {
   transform: translateX(-100%);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1025px) {
   .app-nav.mobile-hidden {
     transform: translateX(0);
   }
@@ -254,7 +254,7 @@ textarea:focus {
   flex: 1;
   min-width: 0;
   width: 100%;
-  margin-left: 17.5rem;
+  margin-left: 0;
 }
 
 .app-main {
@@ -271,7 +271,7 @@ textarea:focus {
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1025px) {
   .app-main {
     padding: 2rem 2rem 4rem;
   }
@@ -328,14 +328,14 @@ textarea:focus {
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1025px) {
   .app-main {
     padding-right: 2rem;
     padding-left: 2rem;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .mobile-nav-toggle {
     display: block;
     top: calc(0.75rem + env(safe-area-inset-top));
@@ -364,7 +364,17 @@ textarea:focus {
   }
 }
 
-@media (min-width: 769px) and (max-width: 1024px) {
+@media (min-width: 1025px) {
+  .mobile-nav-toggle {
+    display: none;
+  }
+
+  .app-content {
+    margin-left: 17.5rem;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1180px) {
   .app-nav {
     width: 15rem;
   }
@@ -379,7 +389,7 @@ textarea:focus {
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1180px) {
   .app-nav-header {
     padding: 1rem;
   }
