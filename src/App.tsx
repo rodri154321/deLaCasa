@@ -8,6 +8,7 @@ import StockPage from './pages/StockPage';
 import ProductionPage from './pages/ProductionPage';
 import FinancePage from './pages/FinancePage';
 import LoginPage from './pages/LoginPage';
+import PublicMenuPage from './pages/PublicMenuPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout, isAuthenticated, refreshSession } from './services/authService';
 import logo from './assets/logopng.webp';
@@ -161,6 +162,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/menu" element={<PublicMenuPage />} />
+        <Route path="/catalogo" element={<PublicMenuPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/*" element={<AppContent />} />
       </Routes>

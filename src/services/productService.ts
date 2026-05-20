@@ -117,6 +117,49 @@ export async function fetchProducts() {
   })) as Product[];
 }
 
+export async function fetchPublicMenuProducts() {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      id,
+      name,
+      description,
+      category,
+      active,
+      product_presentations (
+        id,
+        product_id,
+        name,
+        quantity,
+        sale_price,
+        active,
+        created_at
+      )
+    `)
+    .eq('active', true)
+    .order('category')
+    .order('name');
+
+  if (error) {
+    console.error('Supabase fetchPublicMenuProducts error:', error);
+    throw error;
+  }
+
+  return (data || [])
+    .map((product) => ({
+      ...product,
+      product_presentations: ((product as Product).product_presentations || [])
+        .filter((presentation: ProductPresentation) => presentation.active !== false)
+        .map((presentation: ProductPresentation) => ({
+          ...presentation,
+          quantity: toSafeNumber(presentation.quantity),
+          sale_price: toSafeNumber(presentation.sale_price),
+        }))
+        .sort((a: ProductPresentation, b: ProductPresentation) => a.quantity - b.quantity),
+    }))
+    .filter((product) => product.product_presentations.length > 0) as Product[];
+}
+
 export async function createProduct(product: ProductPayload) {
   const payload = {
     name: product.name.trim(),
