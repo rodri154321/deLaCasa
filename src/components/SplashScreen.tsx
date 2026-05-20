@@ -10,7 +10,7 @@ export default function SplashScreen({ isLeaving = false }: SplashScreenProps) {
       <div className="public-splash-mark">
         <img src={logo} alt="DeLaCasa" className="public-splash-logo" />
       </div>
-      <p className="public-splash-text">Menú artesanal</p>
+      <p className="public-splash-text">Menú</p>
     </div>
   );
 }
