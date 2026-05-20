@@ -37,6 +37,8 @@ export interface Product {
   description: string;
   category: string;
   active: boolean;
+  is_active?: boolean;
+  show_in_catalog?: boolean;
   sale_price: number;
   estimated_cost: number;
   current_stock: number;
@@ -58,6 +60,8 @@ export interface ProductPresentation {
   quantity: number;
   sale_price: number;
   active: boolean;
+  is_active?: boolean;
+  show_in_catalog?: boolean;
   created_at: string;
 }
 
@@ -106,7 +110,7 @@ export interface Database {
     Tables: {
        products: {
          Row: Product;
-         Insert: Omit<Product, 'id' | 'created_at' | 'updated_at'> & {
+         Insert: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'active'> & {
            sale_price?: number;
            estimated_cost?: number;
            current_stock?: number;
@@ -205,10 +209,11 @@ export interface Database {
        };
       product_presentations: {
         Row: ProductPresentation;
-        Insert: Omit<ProductPresentation, 'id' | 'created_at'> & {
-          active?: boolean;
+        Insert: Omit<ProductPresentation, 'id' | 'created_at' | 'active'> & {
+          is_active?: boolean;
+          show_in_catalog?: boolean;
         };
-        Update: Partial<Omit<ProductPresentation, 'id' | 'product_id' | 'created_at'>>;
+        Update: Partial<Omit<ProductPresentation, 'id' | 'product_id' | 'created_at' | 'active'>>;
       };
     };
     Views: {};

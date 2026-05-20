@@ -15,6 +15,7 @@ export default function ProductsPage() {
   const error = useAppStore((state) => state.error);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [catalogFilter, setCatalogFilter] = useState<'all' | 'visible' | 'hidden'>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
   const [successMessage, setSuccessMessage] = useState<string>('');
@@ -23,12 +24,21 @@ export default function ProductsPage() {
     loadProducts().catch(console.error);
   }, [loadProducts]);
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.sku || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.sku || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    const isVisibleInCatalog = product.show_in_catalog !== false;
+    const matchesCatalogFilter =
+      catalogFilter === 'all' ||
+      (catalogFilter === 'visible' && isVisibleInCatalog) ||
+      (catalogFilter === 'hidden' && !isVisibleInCatalog);
+
+    return matchesSearch && matchesCatalogFilter;
+  });
 
   const handleCreateProduct = async (productData: ProductPayload) => {
     try {
@@ -97,6 +107,16 @@ export default function ProductsPage() {
             className="form-input pl-10"
           />
         </div>
+
+        <select
+          value={catalogFilter}
+          onChange={(event) => setCatalogFilter(event.target.value as 'all' | 'visible' | 'hidden')}
+          className="form-input w-full sm:w-56"
+        >
+          <option value="all">Todos los productos</option>
+          <option value="visible">Visibles en catÃ¡logo</option>
+          <option value="hidden">Ocultos del catÃ¡logo</option>
+        </select>
 
         <button
           onClick={() => setIsCreateModalOpen(true)}

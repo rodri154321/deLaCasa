@@ -11,6 +11,8 @@ interface ProductCardProps {
 export default function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
   const isLowStock = product.current_stock <= product.minimum_stock;
   const activePresentations = (product.product_presentations || []).filter((presentation) => presentation.active !== false);
+  const catalogPresentations = activePresentations.filter((presentation) => presentation.show_in_catalog !== false);
+  const isVisibleInCatalog = product.show_in_catalog !== false;
 
   return (
     <div className="card group">
@@ -29,6 +31,13 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
               <div className="badge-danger">Stock Bajo</div>
             )}
             <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+              isVisibleInCatalog
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-gray-100 text-gray-700'
+            }`}>
+              {isVisibleInCatalog ? 'Visible' : 'Oculto'}
+            </div>
+            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
               product.active
                 ? 'bg-emerald-100 text-emerald-800'
                 : 'bg-red-100 text-red-800'
@@ -46,6 +55,7 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
           <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 rounded-xl">
             <p className="text-xs text-emerald-600 font-medium mb-1">Presentaciones</p>
             <p className="text-lg font-bold text-emerald-900">{activePresentations.length}</p>
+            <p className="text-xs text-emerald-700">{catalogPresentations.length} en catÃ¡logo</p>
           </div>
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl">
             <p className="text-xs text-blue-600 font-medium mb-1">Costo Estimado</p>
@@ -80,6 +90,9 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
                   <div className="text-right flex-shrink-0">
                     <div className="font-bold text-amber-700">${safeToFixed(presentation.sale_price)}</div>
                     <div className="text-xs text-gray-500">{safeToFixed(presentation.quantity, 0)} unid</div>
+                    {presentation.show_in_catalog === false && (
+                      <div className="text-xs font-semibold text-gray-400">Oculta</div>
+                    )}
                   </div>
                 </div>
               ))}

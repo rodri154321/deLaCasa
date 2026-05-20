@@ -11,6 +11,18 @@ export type PresentationPayload = {
   quantity: number;
   sale_price: number;
   active?: boolean;
+  is_active?: boolean;
+  show_in_catalog?: boolean;
+};
+
+type ProductRow = Product & {
+  is_active?: boolean;
+  show_in_catalog?: boolean;
+};
+
+type PresentationRow = ProductPresentation & {
+  is_active?: boolean;
+  show_in_catalog?: boolean;
 };
 
 function toSafeNumber(value: unknown, fallback = 0) {
@@ -23,8 +35,28 @@ function normalizePresentation(presentation: PresentationPayload) {
     name: presentation.name.trim(),
     quantity: toSafeNumber(presentation.quantity),
     sale_price: toSafeNumber(presentation.sale_price),
-    active: presentation.active ?? true,
+    is_active: presentation.active ?? presentation.is_active ?? true,
+    show_in_catalog: presentation.show_in_catalog ?? true,
   };
+}
+
+function normalizeProduct(row: ProductRow) {
+  return {
+    ...row,
+    active: row.is_active ?? row.active ?? true,
+    is_active: row.is_active ?? row.active ?? true,
+    show_in_catalog: row.show_in_catalog ?? true,
+    product_presentations: ((row.product_presentations || []) as PresentationRow[])
+      .map((presentation) => ({
+        ...presentation,
+        active: presentation.is_active ?? presentation.active ?? true,
+        is_active: presentation.is_active ?? presentation.active ?? true,
+        show_in_catalog: presentation.show_in_catalog ?? true,
+        quantity: toSafeNumber(presentation.quantity),
+        sale_price: toSafeNumber(presentation.sale_price),
+      }))
+      .sort((a, b) => a.quantity - b.quantity),
+  } as Product;
 }
 
 async function replaceProductPresentations(productId: string, presentations: PresentationPayload[]) {
@@ -49,7 +81,7 @@ async function replaceProductPresentations(productId: string, presentations: Pre
   if (idsToDeactivate.length > 0) {
     const { error } = await supabase
       .from('product_presentations')
-      .update({ active: false })
+      .update({ is_active: false })
       .in('id', idsToDeactivate);
 
     if (error) {
@@ -95,7 +127,8 @@ export async function fetchProducts() {
         name,
         quantity,
         sale_price,
-        active,
+        is_active,
+        show_in_catalog,
         created_at
       )
     `)
@@ -105,16 +138,7 @@ export async function fetchProducts() {
     throw error;
   }
 
-  return (data || []).map((product) => ({
-    ...product,
-    product_presentations: ((product as Product).product_presentations || [])
-      .map((presentation: ProductPresentation) => ({
-        ...presentation,
-        quantity: toSafeNumber(presentation.quantity),
-        sale_price: toSafeNumber(presentation.sale_price),
-      }))
-      .sort((a: ProductPresentation, b: ProductPresentation) => a.quantity - b.quantity),
-  })) as Product[];
+  return (data || []).map((product) => normalizeProduct(product as ProductRow));
 }
 
 export async function fetchPublicMenuProducts() {
@@ -125,18 +149,21 @@ export async function fetchPublicMenuProducts() {
       name,
       description,
       category,
-      active,
+      is_active,
+      show_in_catalog,
       product_presentations (
         id,
         product_id,
         name,
         quantity,
         sale_price,
-        active,
+        is_active,
+        show_in_catalog,
         created_at
       )
     `)
-    .eq('active', true)
+    .eq('is_active', true)
+    .eq('show_in_catalog', true)
     .order('category')
     .order('name');
 
@@ -146,18 +173,14 @@ export async function fetchPublicMenuProducts() {
   }
 
   return (data || [])
+    .map((product) => normalizeProduct(product as ProductRow))
     .map((product) => ({
       ...product,
-      product_presentations: ((product as Product).product_presentations || [])
-        .filter((presentation: ProductPresentation) => presentation.active !== false)
-        .map((presentation: ProductPresentation) => ({
-          ...presentation,
-          quantity: toSafeNumber(presentation.quantity),
-          sale_price: toSafeNumber(presentation.sale_price),
-        }))
-        .sort((a: ProductPresentation, b: ProductPresentation) => a.quantity - b.quantity),
+      product_presentations: (product.product_presentations || []).filter(
+        (presentation) => presentation.active !== false && presentation.show_in_catalog !== false
+      ),
     }))
-    .filter((product) => product.product_presentations.length > 0) as Product[];
+    .filter((product) => product.product_presentations.length > 0);
 }
 
 export async function createProduct(product: ProductPayload) {
@@ -165,7 +188,8 @@ export async function createProduct(product: ProductPayload) {
     name: product.name.trim(),
     description: product.description?.trim() || '',
     category: product.category?.trim() || '',
-    active: product.active ?? true,
+    is_active: product.active ?? product.is_active ?? true,
+    show_in_catalog: product.show_in_catalog ?? true,
     sale_price: toSafeNumber(product.sale_price),
     estimated_cost: toSafeNumber(product.estimated_cost),
     current_stock: toSafeNumber(product.current_stock),
@@ -206,7 +230,8 @@ export async function fetchProductById(id: string) {
         name,
         quantity,
         sale_price,
-        active,
+        is_active,
+        show_in_catalog,
         created_at
       )
     `)
@@ -217,7 +242,7 @@ export async function fetchProductById(id: string) {
     throw error;
   }
 
-  return data as Product;
+  return normalizeProduct(data as ProductRow);
 }
 
 export async function fetchProductPresentations(productId: string) {
@@ -231,7 +256,12 @@ export async function fetchProductPresentations(productId: string) {
     throw error;
   }
 
-  return data as ProductPresentation[];
+  return (data || []).map((presentation) => ({
+    ...presentation,
+    active: presentation.is_active ?? presentation.active ?? true,
+    is_active: presentation.is_active ?? presentation.active ?? true,
+    show_in_catalog: presentation.show_in_catalog ?? true,
+  })) as ProductPresentation[];
 }
 
 export async function createProductPresentation(productId: string, presentation: PresentationPayload) {
@@ -249,12 +279,14 @@ export async function createProductPresentation(productId: string, presentation:
 }
 
 export async function updateProductPresentation(id: string, presentation: Partial<PresentationPayload>) {
-  const payload: Partial<PresentationPayload> = {};
+  const payload: Record<string, unknown> = {};
 
   if (presentation.name !== undefined) payload.name = presentation.name.trim();
   if (presentation.quantity !== undefined) payload.quantity = toSafeNumber(presentation.quantity);
   if (presentation.sale_price !== undefined) payload.sale_price = toSafeNumber(presentation.sale_price);
-  if (presentation.active !== undefined) payload.active = presentation.active;
+  if (presentation.active !== undefined) payload.is_active = presentation.active;
+  if (presentation.is_active !== undefined) payload.is_active = presentation.is_active;
+  if (presentation.show_in_catalog !== undefined) payload.show_in_catalog = presentation.show_in_catalog;
 
   const { data, error } = await supabase
     .from('product_presentations')
@@ -273,7 +305,7 @@ export async function updateProductPresentation(id: string, presentation: Partia
 export async function deleteProductPresentation(id: string) {
   const { error } = await supabase
     .from('product_presentations')
-    .update({ active: false })
+    .update({ is_active: false })
     .eq('id', id);
 
   if (error) {
@@ -283,7 +315,12 @@ export async function deleteProductPresentation(id: string) {
 
 export async function updateProduct(id: string, updates: Partial<ProductPayload>) {
   const { product_presentations, ...productUpdates } = updates;
-  const payload: Partial<Omit<Product, 'id' | 'created_at' | 'updated_at' | 'product_presentations'>> = { ...productUpdates };
+  const { active, ...restProductUpdates } = productUpdates;
+  const payload: Record<string, unknown> = { ...restProductUpdates };
+
+  if (active !== undefined) payload.is_active = active;
+  if (updates.is_active !== undefined) payload.is_active = updates.is_active;
+  if (updates.show_in_catalog !== undefined) payload.show_in_catalog = updates.show_in_catalog;
 
   if (updates.sale_price !== undefined) payload.sale_price = toSafeNumber(updates.sale_price);
   if (updates.estimated_cost !== undefined) payload.estimated_cost = toSafeNumber(updates.estimated_cost);

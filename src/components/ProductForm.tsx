@@ -15,6 +15,7 @@ interface ProductFormData {
   description: string;
   category: string;
   active: boolean;
+  show_in_catalog: boolean;
   sale_price: string;
   estimated_cost: string;
   current_stock: string;
@@ -42,12 +43,16 @@ type PresentationFormData = {
   name: string;
   quantity: string;
   sale_price: string;
+  active: boolean;
+  show_in_catalog: boolean;
 };
 
 const defaultPresentation: PresentationFormData = {
   name: 'Unidad',
   quantity: '1',
   sale_price: '',
+  active: true,
+  show_in_catalog: true,
 };
 
 function toFormPresentations(product?: Product): PresentationFormData[] {
@@ -59,6 +64,8 @@ function toFormPresentations(product?: Product): PresentationFormData[] {
       name: presentation.name,
       quantity: String(presentation.quantity),
       sale_price: String(presentation.sale_price),
+      active: presentation.active !== false,
+      show_in_catalog: presentation.show_in_catalog !== false,
     }));
   }
 
@@ -73,12 +80,40 @@ function toSafeNumber(value: string, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+interface ToggleSettingProps {
+  checked: boolean;
+  title: string;
+  description: string;
+  onChange: (checked: boolean) => void;
+}
+
+function ToggleSetting({ checked, title, description, onChange }: ToggleSettingProps) {
+  return (
+    <label className="group flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#D8C5AE] bg-white/80 p-4 transition-all duration-200 hover:border-[#6F7C4B]/45 hover:bg-white">
+      <span className="min-w-0">
+        <span className="block text-sm font-bold text-[#344033]">{title}</span>
+        <span className="mt-0.5 block text-xs leading-5 text-gray-500">{description}</span>
+      </span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="peer sr-only"
+      />
+      <span className="relative h-7 w-12 flex-shrink-0 rounded-full bg-[#D8C5AE] transition-colors duration-200 peer-checked:bg-[#6F7C4B] peer-focus-visible:ring-4 peer-focus-visible:ring-[#6F7C4B]/20">
+        <span className="absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-5" />
+      </span>
+    </label>
+  );
+}
+
 export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoading = false }: ProductFormProps) {
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
     category: '',
     active: true,
+    show_in_catalog: true,
     sale_price: '',
     estimated_cost: '',
     current_stock: '0',
@@ -100,6 +135,7 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
         description: product.description,
         category: product.category,
         active: product.active,
+        show_in_catalog: product.show_in_catalog !== false,
         sale_price: product.sale_price.toString(),
         estimated_cost: product.estimated_cost.toString(),
         current_stock: product.current_stock.toString(),
@@ -117,6 +153,7 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
         description: '',
         category: '',
         active: true,
+        show_in_catalog: true,
         sale_price: '',
         estimated_cost: '',
         current_stock: '0',
@@ -198,7 +235,8 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
           name: presentation.name.trim(),
           quantity: toSafeNumber(presentation.quantity, 1),
           sale_price: toSafeNumber(presentation.sale_price, 0),
-          active: true,
+          active: presentation.active,
+          show_in_catalog: presentation.show_in_catalog,
         }));
 
         await onSubmit({
@@ -206,6 +244,7 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
           description: formData.description.trim(),
           category: formData.category.trim(),
           active: formData.active,
+          show_in_catalog: formData.show_in_catalog,
           sale_price: Number(formData.sale_price || 0),
           estimated_cost: Number(formData.estimated_cost || 0),
           current_stock: Number(formData.current_stock || 0),
@@ -240,6 +279,18 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
     setFormData(prev => ({ ...prev, [field]: e.target.checked }));
   };
 
+  const handlePresentationCheckboxChange = (
+    index: number,
+    field: 'active' | 'show_in_catalog',
+    checked: boolean
+  ) => {
+    setPresentations((current) =>
+      current.map((presentation, presentationIndex) =>
+        presentationIndex === index ? { ...presentation, [field]: checked } : presentation
+      )
+    );
+  };
+
   const handlePresentationChange = (
     index: number,
     field: keyof PresentationFormData,
@@ -259,7 +310,7 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
   const addPresentation = () => {
     setPresentations((current) => [
       ...current,
-      { name: '', quantity: '1', sale_price: '0' },
+      { name: '', quantity: '1', sale_price: '0', active: true, show_in_catalog: true },
     ]);
   };
 
@@ -462,7 +513,43 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
                         />
                       </div>
 
-                      <div className="sm:col-span-2 lg:col-span-2 flex justify-end pt-7">
+                      <div className="sm:col-span-2 lg:col-span-10 rounded-2xl border border-[#D8C5AE] bg-[#F5EEE4] p-3">
+                        <div className="flex flex-col gap-3 md:flex-row">
+                          <ToggleSetting
+                            checked={presentation.active}
+                            title="Presentación activa"
+                            description="Disponible para ventas"
+                            onChange={(checked) => handlePresentationCheckboxChange(index, 'active', checked)}
+                          />
+                          <ToggleSetting
+                            checked={presentation.show_in_catalog}
+                            title="Mostrar en catálogo público"
+                            description="Visible en la carta pública"
+                            onChange={(checked) => handlePresentationCheckboxChange(index, 'show_in_catalog', checked)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="hidden">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={presentation.active}
+                            onChange={(event) => handlePresentationCheckboxChange(index, 'active', event.target.checked)}
+                          />
+                          <span className="text-sm font-medium text-gray-700">PresentaciÃ³n activa</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={presentation.show_in_catalog}
+                            onChange={(event) => handlePresentationCheckboxChange(index, 'show_in_catalog', event.target.checked)}
+                          />
+                          <span className="text-sm font-medium text-gray-700">Mostrar en catÃ¡logo pÃºblico</span>
+                        </label>
+                      </div>
+
+                      <div className="sm:col-span-2 lg:col-span-2 flex justify-end lg:pt-7">
                         <button
                           type="button"
                           onClick={() => removePresentation(index)}
@@ -595,6 +682,23 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
                 </div>
               </div>
 
+              <div className="mt-5 rounded-2xl border border-[#D8C5AE] bg-[#F5EEE4] p-4">
+                <div className="flex flex-col gap-3 md:flex-row">
+                  <ToggleSetting
+                    checked={formData.active}
+                    title="Producto activo"
+                    description="Visible en el sistema interno"
+                    onChange={(checked) => setFormData((prev) => ({ ...prev, active: checked }))}
+                  />
+                  <ToggleSetting
+                    checked={formData.show_in_catalog}
+                    title="Mostrar en catálogo público"
+                    description="Visible en la carta pública"
+                    onChange={(checked) => setFormData((prev) => ({ ...prev, show_in_catalog: checked }))}
+                  />
+                </div>
+              </div>
+
               <div className="mt-4">
                 <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
                   Notas
@@ -609,7 +713,7 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
                 />
               </div>
 
-              <div className="mt-4">
+              <div className="hidden">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
@@ -618,6 +722,18 @@ export default function ProductForm({ product, isOpen, onClose, onSubmit, isLoad
                     className="mr-2"
                   />
                   <span className="text-sm font-medium text-gray-700">Producto activo</span>
+                </label>
+              </div>
+
+              <div className="hidden">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.show_in_catalog}
+                    onChange={handleCheckboxChange('show_in_catalog')}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Mostrar en catÃ¡logo pÃºblico</span>
                 </label>
               </div>
             </div>
