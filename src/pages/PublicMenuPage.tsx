@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import SplashScreen from '../components/SplashScreen';
+import PromoModal from '../components/PromoModal';
+import { promoConfig } from '../config/promoConfig';
 import { fetchPublicMenuProducts } from '../services/productService';
 import type { Product } from '../services/database';
 import logo from '../assets/logopng.webp';
@@ -30,6 +32,7 @@ export default function PublicMenuPage() {
   const [isSplashLeaving, setIsSplashLeaving] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPromo, setShowPromo] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -68,6 +71,21 @@ export default function PublicMenuPage() {
     };
   }, []);
 
+  /* Promo modal: auto-show after splash, once per session, only if enabled */
+  useEffect(() => {
+    if (showSplash || !promoConfig.enabled) return;
+
+    const alreadyDismissed = sessionStorage.getItem('promo-dismissed-session') === 'true';
+    if (alreadyDismissed) return;
+
+    // small delay after catalog visible for premium feel
+    const promoTimer = window.setTimeout(() => {
+      setShowPromo(true);
+    }, 420);
+
+    return () => window.clearTimeout(promoTimer);
+  }, [showSplash]);
+
   const sections = useMemo(() => {
     const groupedProducts = products.reduce<Record<string, Product[]>>((groups, product) => {
       const category = normalizeCategory(product.category);
@@ -87,6 +105,11 @@ export default function PublicMenuPage() {
         products: categoryProducts.sort((a, b) => a.name.localeCompare(b.name, 'es')),
       }));
   }, [products]);
+
+  const handleClosePromo = () => {
+    setShowPromo(false);
+    sessionStorage.setItem('promo-dismissed-session', 'true');
+  };
 
   return (
     <div className="public-menu-shell">
@@ -170,6 +193,10 @@ export default function PublicMenuPage() {
           </footer>
         </section>
       </main>
+
+      {!showSplash && (
+        <PromoModal isOpen={showPromo} onClose={handleClosePromo} />
+      )}
     </div>
   );
 }

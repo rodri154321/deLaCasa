@@ -748,3 +748,110 @@ textarea:focus {
     transform: translateY(-1px);
   }
 }
+
+/* ============================================
+   PROMO MODAL - Public catalog only
+   Elegant bakery aesthetic, responsive, Framer Motion
+   ============================================ */
+
+.promo-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(47, 42, 36, 0.58);
+  backdrop-filter: blur(8px);
+}
+
+.promo-modal-content {
+  position: fixed;
+  z-index: 201;
+  left: 50%;
+  top: 50%;
+  border-radius: 1.25rem;
+  background: #f5eee4;
+  box-shadow:
+    0 30px 90px -15px rgba(47, 42, 36, 0.32),
+    0 12px 36px rgba(47, 42, 36, 0.18),
+    0 0 0 1px rgba(111, 124, 75, 0.12);
+  overflow: hidden;
+  /* centering + entrance offset handled via Framer x/y */
+}
+
+.promo-modal-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 10;
+  width: 2.35rem;
+  height: 2.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(245, 238, 228, 0.96);
+  border: 1px solid rgba(111, 124, 75, 0.28);
+  color: #2f2a24;
+  cursor: pointer;
+  transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease;
+  box-shadow: 0 4px 14px rgba(47, 42, 36, 0.18);
+  padding: 0;
+  line-height: 0;
+}
+
+.promo-modal-close:hover {
+  background: #fff;
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(47, 42, 36, 0.22);
+}
+
+.promo-modal-close:focus-visible {
+  outline: 2px solid #6f7c4b;
+  outline-offset: 2px;
+}
+
+.promo-modal-close svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  stroke: currentColor;
+}
+
+.promo-modal-image {
+  display: block;
+  max-width: 95vw;
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 1.1rem;
+  background: #f5eee4;
+}
+
+@media (min-width: 480px) {
+  .promo-modal-image {
+    max-width: 420px;
+  }
+}
+
+@media (min-width: 768px) {
+  .promo-modal-image {
+    max-width: 460px;
+  }
+
+  .promo-modal-close {
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .promo-modal-close svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .promo-modal-image {
+    max-width: 520px;
+  }
+}
