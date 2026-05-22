@@ -71,12 +71,9 @@ export default function PublicMenuPage() {
     };
   }, []);
 
-  /* Promo modal: auto-show after splash, once per session, only if enabled */
+  /* Promo modal: show automatically after splash on every load/refresh (if enabled) */
   useEffect(() => {
     if (showSplash || !promoConfig.enabled) return;
-
-    const alreadyDismissed = sessionStorage.getItem('promo-dismissed-session') === 'true';
-    if (alreadyDismissed) return;
 
     // small delay after catalog visible for premium feel
     const promoTimer = window.setTimeout(() => {
@@ -108,7 +105,6 @@ export default function PublicMenuPage() {
 
   const handleClosePromo = () => {
     setShowPromo(false);
-    sessionStorage.setItem('promo-dismissed-session', 'true');
   };
 
   return (
