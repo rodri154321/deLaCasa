@@ -18,7 +18,7 @@ export default function CreateOrderForm() {
   const [customerEmail, setCustomerEmail] = useState('');
   const [items, setItems] = useState<OrderItemPayload[]>([initialItem]);
   const [message, setMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const products = useAppStore((state) => state.products);
   const loadProducts = useAppStore((state) => state.loadProducts);

@@ -855,3 +855,495 @@ textarea:focus {
     max-width: 520px;
   }
 }
+
+/* ============================================
+   EVENT ORDERS - Public custom bakery inquiries
+   ============================================ */
+
+.events-page {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  background:
+    linear-gradient(rgba(245, 238, 228, 0.84), rgba(245, 238, 228, 0.96)),
+    radial-gradient(circle at 16% 9%, rgba(201, 123, 99, 0.16), transparent 18rem),
+    radial-gradient(circle at 92% 28%, rgba(111, 124, 75, 0.18), transparent 24rem),
+    #f5eee4;
+  color: #2f2a24;
+}
+
+.events-hero {
+  display: grid;
+  min-height: min(74vh, 42rem);
+  place-items: center;
+  padding: max(2rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 2rem max(1rem, env(safe-area-inset-left));
+  border-bottom: 1px solid rgba(111, 124, 75, 0.18);
+  background:
+    linear-gradient(180deg, rgba(111, 124, 75, 0.08), rgba(245, 238, 228, 0.08)),
+    repeating-linear-gradient(90deg, rgba(111, 124, 75, 0.08) 0 1px, transparent 1px 5.5rem);
+}
+
+.events-hero-inner {
+  width: min(100%, 52rem);
+  text-align: center;
+  animation: eventsFadeUp 520ms ease both;
+}
+
+.events-logo {
+  width: 5.4rem;
+  height: 5.4rem;
+  margin: 0 auto 1.15rem;
+  border: 2px solid rgba(111, 124, 75, 0.24);
+  border-radius: 999px;
+  object-fit: cover;
+  background: #fffaf0;
+  box-shadow: 0 18px 38px rgba(47, 42, 36, 0.14);
+}
+
+.events-kicker {
+  margin: 0 0 0.8rem;
+  color: #6f7c4b;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.events-hero h1 {
+  max-width: 46rem;
+  margin: 0 auto;
+  color: #2f2a24;
+  font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  font-size: clamp(3rem, 11vw, 6rem);
+  font-weight: 550;
+  line-height: 0.94;
+}
+
+.events-hero p:last-child {
+  max-width: 37rem;
+  margin: 1.15rem auto 0;
+  color: rgba(47, 42, 36, 0.72);
+  font-size: clamp(1rem, 3vw, 1.22rem);
+}
+
+.events-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  width: min(100%, 76rem);
+  margin: 0 auto;
+  padding: 2rem max(1rem, env(safe-area-inset-right)) calc(2rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+}
+
+.events-main-column {
+  min-width: 0;
+}
+
+.events-section-heading {
+  display: grid;
+  grid-template-columns: minmax(1rem, 1fr) auto minmax(1rem, 1fr);
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0 0 1.25rem;
+}
+
+.events-section-heading span {
+  height: 1px;
+  background: rgba(111, 124, 75, 0.24);
+}
+
+.events-section-heading h2 {
+  margin: 0;
+  color: #6f7c4b;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.events-message {
+  padding: 1.15rem;
+  border: 1px solid rgba(111, 124, 75, 0.22);
+  border-radius: 0.75rem;
+  background: rgba(255, 252, 247, 0.72);
+  color: rgba(47, 42, 36, 0.72);
+  text-align: center;
+  box-shadow: 0 14px 34px rgba(47, 42, 36, 0.07);
+}
+
+.events-message-error {
+  border-color: rgba(201, 123, 99, 0.36);
+  background: rgba(201, 123, 99, 0.1);
+}
+
+.events-product-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.events-product-card,
+.events-form,
+.events-summary-card {
+  border: 1px solid rgba(111, 124, 75, 0.18);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 247, 0.94), rgba(248, 236, 214, 0.72)),
+    #fffaf0;
+  box-shadow: 0 18px 42px rgba(47, 42, 36, 0.09);
+}
+
+.events-product-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  animation: eventsFadeUp 420ms ease both;
+}
+
+.events-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.events-card-top p {
+  margin: 0 0 0.3rem;
+  color: #c97b63;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.events-card-top h3 {
+  margin: 0;
+  color: #2f2a24;
+  font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  font-size: clamp(1.8rem, 7vw, 2.55rem);
+  font-weight: 650;
+  line-height: 1;
+}
+
+.events-card-top > span {
+  flex: 0 0 auto;
+  color: rgba(111, 124, 75, 0.55);
+  font-size: 1.25rem;
+}
+
+.events-product-description {
+  margin: -0.25rem 0 0;
+  color: rgba(47, 42, 36, 0.62);
+  font-size: 0.94rem;
+}
+
+.events-product-card label,
+.events-form label {
+  display: grid;
+  gap: 0.4rem;
+  color: rgba(47, 42, 36, 0.7);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.events-product-card select,
+.events-form input,
+.events-form select,
+.events-form textarea {
+  border-color: rgba(111, 124, 75, 0.22);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.events-card-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.8rem;
+}
+
+.events-quantity-control {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(4rem, 1fr) 2.75rem;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(111, 124, 75, 0.24);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.events-quantity-control button,
+.events-summary-controls button {
+  min-height: 2.65rem;
+  border-radius: 0;
+  color: #6f7c4b;
+  background: transparent;
+}
+
+.events-quantity-control button:hover,
+.events-summary-controls button:hover {
+  background: rgba(111, 124, 75, 0.1);
+}
+
+.events-quantity-control input {
+  min-height: 2.65rem;
+  padding: 0.4rem;
+  border: 0;
+  border-right: 1px solid rgba(111, 124, 75, 0.16);
+  border-left: 1px solid rgba(111, 124, 75, 0.16);
+  border-radius: 0;
+  text-align: center;
+  box-shadow: none;
+}
+
+.events-card-price {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px dashed rgba(201, 123, 99, 0.34);
+  border-radius: 0.75rem;
+  background: rgba(201, 123, 99, 0.08);
+}
+
+.events-card-price span {
+  color: rgba(47, 42, 36, 0.58);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.events-card-price strong {
+  color: #9d5d4a;
+  font-size: 1rem;
+}
+
+.events-add-button,
+.events-whatsapp-button {
+  width: 100%;
+  min-height: 3rem;
+  border-radius: 0.75rem;
+  background: #6f7c4b;
+  color: #fffaf0;
+  box-shadow: 0 14px 28px rgba(111, 124, 75, 0.2);
+}
+
+.events-add-button:hover:not(:disabled),
+.events-whatsapp-button:hover:not(:disabled) {
+  background: #5f6d40;
+  transform: translateY(-1px);
+}
+
+.events-form {
+  margin-top: 1.35rem;
+  padding: 1rem;
+}
+
+.events-form-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.events-form-wide {
+  grid-column: 1 / -1;
+}
+
+.events-whatsapp-button {
+  margin-top: 1rem;
+  background: #8e6a4a;
+  box-shadow: 0 14px 28px rgba(142, 106, 74, 0.2);
+}
+
+.events-whatsapp-button:hover:not(:disabled) {
+  background: #765637;
+}
+
+.events-summary {
+  min-width: 0;
+}
+
+.events-summary-card {
+  position: sticky;
+  top: 1rem;
+  padding: 1rem;
+}
+
+.events-summary-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.95rem;
+  border-bottom: 1px solid rgba(111, 124, 75, 0.18);
+}
+
+.events-summary-header p {
+  margin: 0 0 0.25rem;
+  color: #6f7c4b;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.events-summary-header h2 {
+  margin: 0;
+  color: #2f2a24;
+  font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  font-size: 2rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.events-summary-header > span {
+  color: #9d5d4a;
+  font-size: 1.05rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.events-empty-summary {
+  margin: 1rem 0;
+  color: rgba(47, 42, 36, 0.62);
+  font-size: 0.95rem;
+}
+
+.events-summary-lines {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.events-summary-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid rgba(111, 124, 75, 0.16);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.events-summary-line strong,
+.events-summary-line span,
+.events-summary-line small {
+  display: block;
+}
+
+.events-summary-line strong {
+  color: #2f2a24;
+  font-size: 0.95rem;
+}
+
+.events-summary-line span {
+  color: rgba(47, 42, 36, 0.62);
+  font-size: 0.84rem;
+}
+
+.events-summary-line small {
+  margin-top: 0.2rem;
+  color: #9d5d4a;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.events-summary-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 2.25rem);
+  overflow: hidden;
+  border: 1px solid rgba(111, 124, 75, 0.22);
+  border-radius: 0.65rem;
+}
+
+.events-summary-controls button {
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  border-right: 1px solid rgba(111, 124, 75, 0.14);
+  font-size: 1rem;
+}
+
+.events-summary-controls button:last-child {
+  border-right: 0;
+  color: #9d5d4a;
+}
+
+.events-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.95rem;
+  padding-top: 0.95rem;
+  border-top: 1px solid rgba(111, 124, 75, 0.18);
+}
+
+.events-total-row span {
+  color: rgba(47, 42, 36, 0.66);
+  font-weight: 850;
+}
+
+.events-total-row strong {
+  color: #2f2a24;
+  font-size: 1.45rem;
+}
+
+@keyframes eventsFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 640px) {
+  .events-card-actions {
+    grid-template-columns: minmax(10rem, 0.9fr) minmax(10rem, 1fr);
+  }
+
+  .events-form {
+    padding: 1.25rem;
+  }
+
+  .events-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 860px) {
+  .events-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
+    align-items: start;
+    gap: 1.35rem;
+    padding-top: 2.5rem;
+  }
+
+  .events-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .events-form {
+    padding: 1.35rem;
+  }
+}
+
+@media (min-width: 1180px) {
+  .events-layout {
+    gap: 1.75rem;
+  }
+}
+
+@media (hover: hover) {
+  .events-product-card {
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  }
+
+  .events-product-card:hover {
+    border-color: rgba(201, 123, 99, 0.32);
+    box-shadow: 0 22px 52px rgba(47, 42, 36, 0.12);
+    transform: translateY(-2px);
+  }
+}

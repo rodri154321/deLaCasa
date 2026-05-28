@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { safeToFixed } from '../utils/formatters';
-import type { DashboardOrder, OrderStatus, PaymentStatus, PaymentMethod } from '../services/dashboardService';
+import type { DashboardOrder } from '../services/dashboardService';
+import type { OrderStatus, PaymentStatus, PaymentMethod } from '../services/database';
 
 interface DashboardOrderCardProps {
   order: DashboardOrder;

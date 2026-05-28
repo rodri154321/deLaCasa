@@ -13,6 +13,7 @@ import {
 } from '../services/dashboardService';
 import { safeToFixed } from '../utils/formatters';
 import DashboardOrderCard from '../components/DashboardOrderCard';
+import type { OrderStatus, PaymentStatus } from '../services/database';
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -26,6 +27,7 @@ export default function DashboardPage() {
   // Filters
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all');
+  const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -33,10 +35,9 @@ export default function DashboardPage() {
         setLoading(true);
         setError(null);
 
-        const [metricsResult, orderMetricsResult, recentOrdersResult, lowStockResult, topProductsResult] = await Promise.allSettled([
+        const [metricsResult, orderMetricsResult, lowStockResult, topProductsResult] = await Promise.allSettled([
           fetchDashboardMetrics(),
           fetchOrderMetrics(),
-          fetchRecentOrders(8),
           fetchLowStockAlerts(),
           fetchTopProducts(),
         ]);
@@ -61,12 +62,8 @@ export default function DashboardPage() {
           });
         }
 
-        if (recentOrdersResult.status === 'fulfilled') {
-          setRecentOrders(recentOrdersResult.value);
-        } else {
-          console.error('Dashboard recent orders fetch failed:', recentOrdersResult.reason);
-          setRecentOrders([]);
-        }
+        const fetchedOrders = await fetchRecentOrders(8, !showCompleted);
+        setRecentOrders(fetchedOrders);
 
         if (lowStockResult.status === 'fulfilled') {
           console.log('Dashboard low stock items:', lowStockResult.value);
@@ -91,22 +88,20 @@ export default function DashboardPage() {
     };
 
     loadDashboard();
-  }, []);
+  }, [showCompleted]);
 
   const refreshDashboard = async () => {
     try {
-      const [orderMetricsResult, recentOrdersResult] = await Promise.allSettled([
+      const [orderMetricsResult] = await Promise.allSettled([
         fetchOrderMetrics(),
-        fetchRecentOrders(8),
       ]);
 
       if (orderMetricsResult.status === 'fulfilled') {
         setOrderMetrics(orderMetricsResult.value);
       }
 
-      if (recentOrdersResult.status === 'fulfilled') {
-        setRecentOrders(recentOrdersResult.value);
-      }
+      const fetchedOrders = await fetchRecentOrders(8, !showCompleted);
+      setRecentOrders(fetchedOrders);
     } catch (error) {
       console.error('Dashboard refresh failed:', error);
     }
@@ -209,7 +204,7 @@ export default function DashboardPage() {
       {/* Recent Orders */}
       <div className="card hover:shadow-xl transition-shadow duration-300">
         <div className="card-header bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-w-0">
             <div className="flex items-center gap-3">
               <div className="bg-blue-100 p-2 rounded-lg">
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,12 +214,22 @@ export default function DashboardPage() {
               <h2 className="text-xl font-bold text-gray-900">Órdenes Recientes</h2>
             </div>
 
-            {/* Filters */}
-            <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => setShowCompleted(!showCompleted)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  showCompleted
+                    ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                    : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                }`}
+              >
+                Mostrar completados
+              </button>
+
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
-                className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
+                className="min-w-0 flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
               >
                 <option value="all">📊 Todos los estados</option>
                 <option value="pending">⏳ Pendientes</option>
@@ -237,7 +242,7 @@ export default function DashboardPage() {
               <select
                 value={paymentFilter}
                 onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | 'all')}
-                className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
+                className="min-w-0 flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
               >
                 <option value="all">💰 Todos los pagos</option>
                 <option value="unpaid">❌ Impagos</option>
@@ -267,6 +272,7 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-3">
               {recentOrders
+                .filter(order => !showCompleted && order.status === 'delivered' && order.payment_status === 'paid' ? false : true)
                 .filter(order =>
                   statusFilter === 'all' || order.status === statusFilter
                 )

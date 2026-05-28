@@ -1,14 +1,18 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import CreateOrderForm from '../components/CreateOrderForm';
 import OrderCard from '../components/OrderCard';
 import { useAppStore } from '../store/useAppStore';
 import { safeToFixed } from '../utils/formatters';
+import type { OrderStatus, PaymentStatus } from '../services/database';
 
 export default function OrdersPage() {
   const orders = useAppStore((state) => state.orders);
   const loadOrders = useAppStore((state) => state.loadOrders);
   const isLoading = useAppStore((state) => state.isLoading);
   const error = useAppStore((state) => state.error);
+
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all');
 
   const refreshOrders = async () => {
     try {
@@ -36,8 +40,39 @@ export default function OrdersPage() {
       {/* Recent Orders */}
       <div className="card">
         <div className="card-header">
-          <h2 className="text-xl font-semibold text-gray-900">Órdenes Recientes</h2>
-          <p className="text-gray-600 text-sm">Historial de órdenes procesadas</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Órdenes Recientes</h2>
+              <p className="text-gray-600 text-sm">Historial de órdenes procesadas</p>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
+                className="min-w-0 flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
+              >
+                <option value="all">📊 Todos los estados</option>
+                <option value="pending">⏳ Pendientes</option>
+                <option value="preparing">👨‍🍳 Preparando</option>
+                <option value="ready">✅ Listas</option>
+                <option value="delivered">🚚 Entregadas</option>
+                <option value="cancelled">❌ Canceladas</option>
+              </select>
+
+              <select
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | 'all')}
+                className="min-w-0 flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
+              >
+                <option value="all">💰 Todos los pagos</option>
+                <option value="unpaid">❌ Impagos</option>
+                <option value="partial">⚠️ Parciales</option>
+                <option value="paid">✅ Pagados</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div className="card-body">
@@ -64,13 +99,20 @@ export default function OrdersPage() {
             </div>
           ) : orders.length > 0 ? (
             <div className="space-y-4">
-              {orders.map((order) => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  onRefresh={refreshOrders}
-                />
-              ))}
+              {orders
+                .filter(order =>
+                  statusFilter === 'all' || order.status === statusFilter
+                )
+                .filter(order =>
+                  paymentFilter === 'all' || order.payment_status === paymentFilter
+                )
+                .map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onRefresh={refreshOrders}
+                  />
+                ))}
             </div>
           ) : (
             <div className="text-center py-16">

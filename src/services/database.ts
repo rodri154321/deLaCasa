@@ -65,6 +65,20 @@ export interface ProductPresentation {
   created_at: string;
 }
 
+export interface EventRequest {
+  id: string;
+  customer_name: string;
+  phone: string;
+  event_date: string | null;
+  event_type: string;
+  guest_count: number | null;
+  comments: string | null;
+  estimated_total: number;
+  items: unknown[];
+  status: string;
+  created_at: string;
+}
+
 export interface Ingredient {
   id: string;
   name: string;
@@ -214,6 +228,11 @@ export interface Database {
           show_in_catalog?: boolean;
         };
         Update: Partial<Omit<ProductPresentation, 'id' | 'product_id' | 'created_at' | 'active'>>;
+      };
+      event_requests: {
+        Row: EventRequest;
+        Insert: Omit<EventRequest, 'id' | 'created_at'>;
+        Update: Partial<EventRequest>;
       };
     };
     Views: {};

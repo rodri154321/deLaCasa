@@ -7,6 +7,7 @@ import RecipesPage from './pages/RecipesPage';
 import StockPage from './pages/StockPage';
 import ProductionPage from './pages/ProductionPage';
 import FinancePage from './pages/FinancePage';
+import EventOrdersPage from './pages/EventOrdersPage';
 import LoginPage from './pages/LoginPage';
 import PublicMenuPage from './pages/PublicMenuPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -164,6 +165,8 @@ function App() {
       <Routes>
         <Route path="/menu" element={<PublicMenuPage />} />
         <Route path="/catalogo" element={<PublicMenuPage />} />
+        <Route path="/eventos" element={<EventOrdersPage />} />
+        <Route path="/pedidos-especiales" element={<EventOrdersPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/*" element={<AppContent />} />
       </Routes>

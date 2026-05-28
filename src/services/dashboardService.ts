@@ -249,8 +249,8 @@ export async function fetchOrderMetrics(): Promise<OrderMetrics> {
   }
 }
 
-export async function fetchRecentOrders(limit: number = 10): Promise<DashboardOrder[]> {
-  const { data, error } = await supabase
+export async function fetchRecentOrders(limit: number = 10, excludeCompleted: boolean = false): Promise<DashboardOrder[]> {
+  let query = supabase
     .from('orders')
     .select(`
       id, customer_name, total_amount, status, payment_status, payment_method, created_at,
@@ -262,6 +262,16 @@ export async function fetchRecentOrders(limit: number = 10): Promise<DashboardOr
     `)
     .order('created_at', { ascending: false })
     .limit(limit);
+
+  if (excludeCompleted) {
+    // Exclude orders where status = 'delivered' AND payment_status = 'paid'
+    // Using .not() with .and() for the combined condition
+    query = query
+      .not('status', 'eq', 'delivered')
+      .not('payment_status', 'eq', 'paid');
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching recent orders:', error);
