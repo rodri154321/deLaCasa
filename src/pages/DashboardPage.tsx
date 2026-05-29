@@ -14,6 +14,7 @@ import {
 import { safeToFixed } from '../utils/formatters';
 import DashboardOrderCard from '../components/DashboardOrderCard';
 import type { OrderStatus, PaymentStatus } from '../services/database';
+import { fetchOperationalAlerts, OperationalAlert } from '../services/alertService';
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -29,17 +30,20 @@ export default function DashboardPage() {
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all');
   const [showCompleted, setShowCompleted] = useState(false);
 
+  const [alerts, setAlerts] = useState<OperationalAlert[]>([]);
+
   useEffect(() => {
     const loadDashboard = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const [metricsResult, orderMetricsResult, lowStockResult, topProductsResult] = await Promise.allSettled([
+        const [metricsResult, orderMetricsResult, lowStockResult, topProductsResult, alertsResult] = await Promise.allSettled([
           fetchDashboardMetrics(),
           fetchOrderMetrics(),
           fetchLowStockAlerts(),
           fetchTopProducts(),
+          fetchOperationalAlerts(),
         ]);
 
         if (metricsResult.status === 'fulfilled') {
@@ -79,6 +83,12 @@ export default function DashboardPage() {
         } else {
           console.error('Dashboard top products fetch failed:', topProductsResult.reason);
         }
+
+        if (alertsResult.status === 'fulfilled') {
+          setAlerts(alertsResult.value);
+        } else {
+          console.error('Dashboard alerts fetch failed:', alertsResult.reason);
+        }
       } catch (err) {
         console.error('Dashboard load failed:', err);
         setError((err as Error).message);
@@ -96,9 +106,22 @@ export default function DashboardPage() {
         fetchOrderMetrics(),
       ]);
 
-      if (orderMetricsResult.status === 'fulfilled') {
-        setOrderMetrics(orderMetricsResult.value);
-      }
+        if (orderMetricsResult.status === 'fulfilled') {
+          setOrderMetrics(orderMetricsResult.value);
+        } else {
+          console.error('Dashboard order metrics fetch failed:', orderMetricsResult.reason);
+          setOrderMetrics({
+            pending_orders: 0,
+            preparing_orders: 0,
+            ready_orders: 0,
+            delivered_today: 0,
+            unpaid_orders: 0,
+            paid_orders: 0,
+            active_orders: 0,
+            revenue_today: 0,
+            revenue_this_month: 0,
+          });
+        }
 
       const fetchedOrders = await fetchRecentOrders(8, !showCompleted);
       setRecentOrders(fetchedOrders);
@@ -126,6 +149,61 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Alerts */}
+      {!loading && alerts.length > 0 && (
+        <div className="space-y-2">
+          {alerts.map((alert) => (
+            <a
+              key={alert.id}
+              href={alert.link || '#'}
+              className={`block p-3 md:p-4 rounded-xl border transition-all duration-200 hover:shadow-md ${
+                alert.severity === 'critical'
+                  ? 'bg-red-50 border-red-200 hover:bg-red-100'
+                  : alert.severity === 'warning'
+                    ? 'bg-amber-50 border-amber-200 hover:bg-amber-100'
+                    : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                  alert.severity === 'critical'
+                    ? 'bg-red-200 text-red-700'
+                    : alert.severity === 'warning'
+                      ? 'bg-amber-200 text-amber-700'
+                      : 'bg-blue-200 text-blue-700'
+                }`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {alert.severity === 'critical' && (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.5.192 3 1.732 3z" />
+                    )}
+                    {alert.severity === 'warning' && (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    )}
+                    {alert.severity === 'info' && (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    )}
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium truncate ${
+                    alert.severity === 'critical'
+                      ? 'text-red-800'
+                      : alert.severity === 'warning'
+                        ? 'text-amber-800'
+                        : 'text-blue-800'
+                  }`}>{alert.message}</p>
+                </div>
+                {alert.link && (
+                  <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
         {loading ? (
@@ -142,6 +220,20 @@ export default function DashboardPage() {
 
 
             {/* Order Metrics */}
+            <div className="card p-3 md:p-4 lg:p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-all duration-300 group">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-green-600 text-xs md:text-sm font-semibold mb-1 uppercase tracking-wide">Órdenes Activas</p>
+                  <p className="text-xl md:text-2xl lg:text-3xl font-bold text-green-900 group-hover:scale-105 transition-transform duration-300">{orderMetrics?.active_orders || 0}</p>
+                </div>
+                <div className="bg-green-200 p-2 md:p-3 rounded-xl group-hover:bg-green-300 transition-colors duration-300 ml-3 md:ml-4">
+                  <svg className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
             <div className="card p-3 md:p-4 lg:p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-all duration-300 group">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
@@ -193,6 +285,34 @@ export default function DashboardPage() {
                 <div className="bg-orange-200 p-2 md:p-3 rounded-xl group-hover:bg-orange-300 transition-colors duration-300 ml-3 md:ml-4">
                   <svg className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="card p-3 md:p-4 lg:p-6 bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200 hover:shadow-lg transition-all duration-300 group">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-teal-600 text-xs md:text-sm font-semibold mb-1 uppercase tracking-wide">Pagadas</p>
+                  <p className="text-xl md:text-2xl lg:text-3xl font-bold text-teal-900 group-hover:scale-105 transition-transform duration-300">{orderMetrics?.paid_orders || 0}</p>
+                </div>
+                <div className="bg-teal-200 p-2 md:p-3 rounded-xl group-hover:bg-teal-300 transition-colors duration-300 ml-3 md:ml-4">
+                  <svg className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="card p-3 md:p-4 lg:p-6 bg-gradient-to-br from-red-50 to-red-100 border-red-200 hover:shadow-lg transition-all duration-300 group">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-red-600 text-xs md:text-sm font-semibold mb-1 uppercase tracking-wide">Impagas</p>
+                  <p className="text-xl md:text-2xl lg:text-3xl font-bold text-red-900 group-hover:scale-105 transition-transform duration-300">{orderMetrics?.unpaid_orders || 0}</p>
+                </div>
+                <div className="bg-red-200 p-2 md:p-3 rounded-xl group-hover:bg-red-300 transition-colors duration-300 ml-3 md:ml-4">
+                  <svg className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                   </svg>
                 </div>
               </div>

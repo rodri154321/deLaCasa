@@ -232,6 +232,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const financeMetrics = await fetchFinanceMetrics();
+      console.log('[STORE DEBUG] Received financeMetrics:', financeMetrics);
       set({ financeMetrics });
     } catch (error: unknown) {
       console.error('loadFinanceMetrics failed:', error);
@@ -277,6 +278,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           order.id === orderId ? updatedOrder : order
         ),
       }));
+      await get().loadFinanceMetrics();
     } catch (error: unknown) {
       console.error('updateOrderStatus failed:', error);
       set({ error: (error as Error).message });

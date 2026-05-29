@@ -5,6 +5,8 @@
  * @returns Formatted string
  */
 export function safeToFixed(value: any, decimals: number = 2): string {
-  const num = Number(value || 0);
+  const num = Number(value ?? 0);
+  if (!Number.isFinite(num)) return '0.00';
+  if (decimals === 0) return Math.round(num).toString();
   return num.toFixed(decimals);
 }

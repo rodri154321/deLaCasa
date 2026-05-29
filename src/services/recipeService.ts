@@ -9,6 +9,16 @@ export async function fetchRecipes() {
       products (
         id,
         name
+      ),
+      recipe_ingredients (
+        id,
+        quantity,
+        ingredients (
+          id,
+          name,
+          unit,
+          cost_per_unit
+        )
       )
     `)
     .order('name');
@@ -17,7 +27,19 @@ export async function fetchRecipes() {
     throw error;
   }
 
-  return data as (Recipe & { products: { id: string; name: string } })[];
+  return data as (Recipe & {
+    products: { id: string; name: string };
+    recipe_ingredients: Array<{
+      id: string;
+      quantity: number;
+      ingredients: {
+        id: string;
+        name: string;
+        unit: string;
+        cost_per_unit: number;
+      };
+    }>;
+  })[];
 }
 
 export async function fetchRecipeById(id: string) {

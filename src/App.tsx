@@ -10,6 +10,7 @@ import FinancePage from './pages/FinancePage';
 import EventOrdersPage from './pages/EventOrdersPage';
 import LoginPage from './pages/LoginPage';
 import PublicMenuPage from './pages/PublicMenuPage';
+import SettingsPage from './pages/SettingsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout, isAuthenticated, refreshSession } from './services/authService';
 import logo from './assets/logopng.webp';
@@ -100,13 +101,19 @@ function Navigation() {
           </svg>
           Producción
         </NavLink>
-        <NavLink to="/finance" className="nav-link" onClick={closeMobileMenu}>
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-          </svg>
-          Finanzas
-        </NavLink>
-      </div>
+<NavLink to="/finance" className="nav-link" onClick={closeMobileMenu}>
+           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+           </svg>
+           Finanzas
+         </NavLink>
+         <NavLink to="/settings" className="nav-link" onClick={closeMobileMenu}>
+           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.544 2.627-1.544 3.052 0l7.31 12.05a2.25 2.25 0 01-1.91 3.09H5.68a2.25 2.25 0 01-1.91-3.09l7.31-12.05zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+           </svg>
+           Configuración
+         </NavLink>
+       </div>
 
       {/* Logout Button */}
       <div className="app-nav-footer">
@@ -152,6 +159,7 @@ function AppContent() {
             <Route path="/stock" element={<ProtectedRoute><StockPage /></ProtectedRoute>} />
             <Route path="/production" element={<ProtectedRoute><ProductionPage /></ProtectedRoute>} />
             <Route path="/finance" element={<ProtectedRoute><FinancePage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           </Routes>
         </div>
       </main>

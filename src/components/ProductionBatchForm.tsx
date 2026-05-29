@@ -8,7 +8,11 @@ const initialCost: ProductionCostInput = {
   description: '',
 };
 
-export default function ProductionBatchForm() {
+interface ProductionBatchFormProps {
+  onRefresh?: () => void;
+}
+
+export default function ProductionBatchForm({ onRefresh }: ProductionBatchFormProps) {
   const [recipes, setRecipes] = useState([] as Array<{ id: string; name: string }>);
   const [recipeId, setRecipeId] = useState('');
   const [quantityProduced, setQuantityProduced] = useState(1);
@@ -42,13 +46,14 @@ export default function ProductionBatchForm() {
 
     try {
       const result = await createProductionBatch(recipeId, quantityProduced, notes, costs);
-      setMessage(`Batch created: ${result.batch_id}. Total cost: ${safeToFixed(result.total_cost)}`);
+      setMessage(`Lote creado: ${result.batch_id}. Costo total: ${safeToFixed(result.total_cost)}`);
       setRecipeId('');
       setQuantityProduced(1);
       setCosts([{ ...initialCost }]);
       setNotes('');
+      onRefresh?.();
     } catch (error) {
-      setMessage('Failed to create production batch.');
+      setMessage('Error al crear el lote.');
       console.error(error);
     } finally {
       setIsSubmitting(false);

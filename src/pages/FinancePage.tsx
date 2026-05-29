@@ -13,47 +13,42 @@ export default function FinancePage() {
   const { financeMetrics, loadFinanceMetrics, isLoading: storeLoading, error: storeError } = useAppStore();
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [mostProfitableProducts, setMostProfitableProducts] = useState<MostProfitableProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   useEffect(() => {
     const loadFinance = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+      console.log('[FINANCE] Starting loadFinance, current metrics:', financeMetrics);
 
-        // Backfill old order items if needed
-        await backfillOrderItems();
+      await backfillOrderItems();
 
-        // Load finance metrics from store
-        await loadFinanceMetrics();
+      await loadFinanceMetrics();
 
-        const [topProductsResult, mostProfitableResult] = await Promise.allSettled([
-          fetchTopProducts(),
-          fetchMostProfitableProducts(),
-        ]);
+      const updatedMetrics = useAppStore.getState().financeMetrics;
+      console.log('[FINANCE] Metrics after loadFinanceMetrics:', updatedMetrics);
 
-        if (topProductsResult.status === 'fulfilled') {
-          setTopProducts(topProductsResult.value);
-        } else {
-          console.error('Top products fetch failed:', topProductsResult.reason);
-        }
+      const [topProductsResult, mostProfitableResult] = await Promise.allSettled([
+        fetchTopProducts(),
+        fetchMostProfitableProducts(),
+      ]);
 
-        if (mostProfitableResult.status === 'fulfilled') {
-          setMostProfitableProducts(mostProfitableResult.value);
-        } else {
-          console.error('Most profitable products fetch failed:', mostProfitableResult.reason);
-        }
-      } catch (err) {
-        console.error('Finance load failed:', err);
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
+      if (topProductsResult.status === 'fulfilled') {
+        setTopProducts(topProductsResult.value);
+      } else {
+        console.error('Top products fetch failed:', topProductsResult.reason);
       }
+
+      if (mostProfitableResult.status === 'fulfilled') {
+        setMostProfitableProducts(mostProfitableResult.value);
+      } else {
+        console.error('Most profitable products fetch failed:', mostProfitableResult.reason);
+      }
+      setLoadingProducts(false);
     };
 
     loadFinance();
   }, [loadFinanceMetrics]);
+
+  console.log('[FINANCE RENDER] financeMetrics:', financeMetrics, 'storeLoading:', storeLoading);
 
   return (
     <div className="space-y-8">
@@ -63,20 +58,20 @@ export default function FinancePage() {
         <p className="text-gray-600 text-base md:text-lg">Análisis financiero y métricas de ventas</p>
       </div>
 
-      {(error || storeError) && (
+      {storeError && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-800">
           <div className="flex items-center">
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
-            {error || storeError}
+            {storeError}
           </div>
         </div>
       )}
 
       {/* Finance Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
-        {(loading || storeLoading) ? (
+        {storeLoading ? (
           <>
             {[1, 2, 3, 4, 5, 6, 7].map((i) => (
               <div key={i} className="card p-4 md:p-6">
@@ -113,23 +108,22 @@ export default function FinancePage() {
                   </svg>
                 </div>
               </div>
-            </div>
+</div>
+             <div className="card p-3 md:p-4 lg:p-6 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 hover:shadow-lg transition-all duration-300 group">
+               <div className="flex items-center justify-between">
+                 <div className="flex-1 min-w-0">
+                   <p className="text-amber-600 text-xs md:text-sm font-semibold mb-1 uppercase tracking-wide">Ingresos Totales</p>
+                   <p className="text-xl md:text-2xl lg:text-3xl font-bold text-amber-900 group-hover:scale-105 transition-transform duration-300">${safeToFixed(financeMetrics?.revenue_total, 0)}</p>
+                 </div>
+                 <div className="bg-amber-200 p-2 md:p-3 rounded-xl group-hover:bg-amber-300 transition-colors duration-300 ml-3 md:ml-4">
+                   <svg className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                   </svg>
+                 </div>
+               </div>
+             </div>
 
-            <div className="card p-3 md:p-4 lg:p-6 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 hover:shadow-lg transition-all duration-300 group">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="text-amber-600 text-xs md:text-sm font-semibold mb-1 uppercase tracking-wide">Ganancia Hoy</p>
-                  <p className="text-xl md:text-2xl lg:text-3xl font-bold text-amber-900 group-hover:scale-105 transition-transform duration-300">${safeToFixed(financeMetrics?.profit_today)}</p>
-                </div>
-                <div className="bg-amber-200 p-2 md:p-3 rounded-xl group-hover:bg-amber-300 transition-colors duration-300 ml-3 md:ml-4">
-                  <svg className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div className="card p-3 md:p-4 lg:p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-all duration-300 group">
+             <div className="card p-3 md:p-4 lg:p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-all duration-300 group">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-green-600 text-xs md:text-sm font-semibold mb-1 uppercase tracking-wide">Ganancia Mes</p>
@@ -196,7 +190,7 @@ export default function FinancePage() {
             <h2 className="text-xl font-semibold text-gray-900">Productos Más Vendidos</h2>
           </div>
           <div className="card-body">
-            {loading ? (
+            {loadingProducts ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="flex items-center space-x-3">
@@ -247,7 +241,7 @@ export default function FinancePage() {
             <h2 className="text-xl font-semibold text-gray-900">Productos Más Rentables</h2>
           </div>
           <div className="card-body">
-            {loading ? (
+            {loadingProducts ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="flex items-center space-x-3">

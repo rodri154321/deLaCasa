@@ -109,6 +109,20 @@ export interface RecipeIngredient {
   quantity: number;
 }
 
+export interface RecipeWithIngredients extends Recipe {
+  products: { id: string; name: string };
+  recipe_ingredients: Array<{
+    id: string;
+    quantity: number;
+    ingredients: {
+      id: string;
+      name: string;
+      unit: string;
+      cost_per_unit: number;
+    };
+  }>;
+}
+
 export interface OrderItemPayload {
   product_id: string;
   presentation_id: string;

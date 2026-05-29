@@ -32,10 +32,6 @@ export default function CreateOrderForm() {
       .map((presentation) => ({ product, presentation }))
   );
 
-  // Debug logging
-  console.log('Active products:', activeProducts.length);
-  console.log('Active presentation options:', activePresentationOptions.length);
-
   useEffect(() => {
     loadProducts().catch((error) => console.error(error));
   }, [loadProducts]);
@@ -59,8 +55,6 @@ export default function CreateOrderForm() {
           const quantity = Number(item.quantity || 0);
           const subtotal = unitPrice * quantity;
           const profit = subtotal - (unitCost * quantity);
-
-          console.log('Selected presentation:', option.presentation.name, 'Price:', unitPrice, 'Cost:', unitCost);
 
           return {
             ...item,
@@ -133,15 +127,12 @@ export default function CreateOrderForm() {
     setMessage(null);
 
     try {
-      console.log('Submitting order with items:', items);
-      console.log('ORDER ITEMS PAYLOAD:', items);
       const orderId = await addOrder(customerName, customerEmail, items);
       setMessage(`Orden creada exitosamente: ${orderId}`);
       setCustomerName('');
       setCustomerEmail('');
       setItems([initialItem]);
     } catch (error: any) {
-      console.error('Order creation failed:', error);
       const errorMessage = error?.message || 'Error desconocido al crear la orden';
       if (errorMessage.includes('stock')) {
         setMessage('No hay suficiente stock para completar la orden. Verifique las cantidades.');
@@ -355,7 +346,7 @@ export default function CreateOrderForm() {
                     </svg>
                   ) : (
                     <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-9.293L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   )}
                   {message}

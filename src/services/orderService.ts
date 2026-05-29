@@ -18,8 +18,6 @@ export async function createOrderWithItems(
     profit: Number.isFinite(Number(item.profit)) ? Number(item.profit) : 0,
   }));
 
-  console.log('Order creation payload:', payload);
-
   const { data, error } = await supabase.rpc(ORDER_RPC, {
     p_customer_name: customerName.trim(),
     p_customer_email: customerEmail.trim(),
@@ -27,7 +25,6 @@ export async function createOrderWithItems(
   });
 
   if (error) {
-    console.error('Supabase order creation error:', error);
     throw error;
   }
 
@@ -37,11 +34,29 @@ export async function createOrderWithItems(
 export async function fetchOrders() {
   const { data, error } = await supabase
     .from('orders')
-    .select('id, customer_name, customer_email, total_amount, status, payment_status, payment_method, delivered_at, paid_at, created_at, updated_at')
+    .select(`
+      *,
+      order_items (
+        id,
+        product_id,
+        presentation_id,
+        quantity,
+        unit_price,
+        created_at,
+        products (
+          id,
+          name
+        ),
+        product_presentations (
+          id,
+          name,
+          quantity
+        )
+      )
+    `)
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching orders:', error);
     throw error;
   }
 
@@ -49,15 +64,19 @@ export async function fetchOrders() {
 }
 
 export async function updateOrderStatus(orderId: string, status: Order['status']) {
+  const updateData: Partial<Order> = { status };
+  if (status === 'delivered') {
+    updateData.delivered_at = new Date().toISOString();
+  }
+
   const { data, error } = await supabase
     .from('orders')
-    .update({ status })
+    .update(updateData)
     .eq('id', orderId)
     .select()
     .single();
 
   if (error) {
-    console.error('Error updating order status:', error);
     throw error;
   }
 
@@ -69,6 +88,9 @@ export async function updatePaymentStatus(orderId: string, paymentStatus: Order[
   if (paymentMethod) {
     updateData.payment_method = paymentMethod;
   }
+  if (paymentStatus === 'paid') {
+    updateData.paid_at = new Date().toISOString();
+  }
 
   const { data, error } = await supabase
     .from('orders')
@@ -78,7 +100,6 @@ export async function updatePaymentStatus(orderId: string, paymentStatus: Order[
     .single();
 
   if (error) {
-    console.error('Error updating payment status:', error);
     throw error;
   }
 
@@ -112,7 +133,6 @@ export async function fetchOrderById(orderId: string) {
     .single();
 
   if (error) {
-    console.error('Error fetching order by ID:', error);
     throw error;
   }
 
