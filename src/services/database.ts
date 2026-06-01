@@ -29,6 +29,8 @@ export interface Order {
   paid_at?: string | null;
   created_at: string;
   updated_at: string;
+  manual_total?: number | null;
+  manual_total_reason?: string | null;
   order_items?: Array<{
     id: string;
     product_id: string;

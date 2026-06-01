@@ -186,7 +186,11 @@ export async function addOrderItem(orderId: string, item: {
       subtotal,
       profit,
     })
-    .select()
+    .select(`
+      *,
+      products (name),
+      product_presentations (name)
+    `)
     .single();
 
   if (error) {
@@ -253,6 +257,74 @@ export async function recalculateOrderTotal(orderId: string) {
   const { data, error } = await supabase
     .from('orders')
     .update({ total_amount: total })
+    .eq('id', orderId)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as Order;
+}
+
+export async function addOrderHistory(orderId: string, actionType: string, description: string) {
+  const { data, error } = await supabase
+    .from('order_history')
+    .insert({
+      order_id: orderId,
+      action_type: actionType,
+      description,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function fetchOrderHistory(orderId: string) {
+  const { data, error } = await supabase
+    .from('order_history')
+    .select('*')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function updateManualTotal(orderId: string, manualTotal: number, reason: string) {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ 
+      manual_total: manualTotal,
+      manual_total_reason: reason 
+    })
+    .eq('id', orderId)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as Order;
+}
+
+export async function clearManualTotal(orderId: string) {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ 
+      manual_total: null,
+      manual_total_reason: null 
+    })
     .eq('id', orderId)
     .select()
     .single();

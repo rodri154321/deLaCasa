@@ -2,7 +2,7 @@ import create from 'zustand';
 import { fetchProducts, createProduct, updateProduct, deleteProduct, ProductPayload } from '../services/productService';
 import { fetchIngredients, createIngredient, updateIngredient, deleteIngredient } from '../services/stockService';
 import { fetchRecipes, createRecipe, updateRecipe, deleteRecipe } from '../services/recipeService';
-import { createOrderWithItems, fetchOrders, updateOrderStatus, updatePaymentStatus, addOrderItem, updateOrderItemQuantity, deleteOrderItem, recalculateOrderTotal } from '../services/orderService';
+import { createOrderWithItems, fetchOrders, updateOrderStatus, updatePaymentStatus, addOrderItem, updateOrderItemQuantity, deleteOrderItem, recalculateOrderTotal, addOrderHistory, updateManualTotal } from '../services/orderService';
 import { fetchFinanceMetrics, FinanceMetrics } from '../services/dashboardService';
 import type {
   Product,
@@ -49,6 +49,7 @@ type AppState = {
   }) => Promise<void>;
   updateOrderItem: (itemId: string, quantity: number) => Promise<void>;
   deleteOrderItem: (itemId: string, orderId: string) => Promise<void>;
+  updateManualTotal: (orderId: string, manualTotal: number, reason: string) => Promise<void>;
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -316,7 +317,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   addOrderItem: async (orderId, item) => {
     set({ isLoading: true, error: null });
     try {
-      await addOrderItem(orderId, item);
+      const newItem = await addOrderItem(orderId, item);
+      const presentationName = ((newItem as any).product_presentations?.name) || '';
+      await addOrderHistory(orderId, 'added', `${presentationName} x${item.quantity}`);
       const updatedOrder = await recalculateOrderTotal(orderId);
       set((state) => ({
         orders: state.orders.map((order) =>
@@ -335,12 +338,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   updateOrderItem: async (itemId, quantity) => {
     set({ isLoading: true, error: null });
     try {
-      await updateOrderItemQuantity(itemId, quantity);
       const orders = get().orders;
       const order = orders.find((o: Order) =>
         o.order_items?.some((item: any) => item.id === itemId)
       );
+      const item = order?.order_items?.find((i: any) => i.id === itemId);
+      await updateOrderItemQuantity(itemId, quantity);
       if (order) {
+        const oldQty = item?.quantity || 0;
+        const presentationName = item?.product_presentations?.name || '';
+        await addOrderHistory(order.id, 'modified', `${presentationName} x${oldQty} → x${quantity}`);
         const updatedOrder = await recalculateOrderTotal(order.id);
         set((state) => ({
           orders: state.orders.map((o) =>
@@ -360,7 +367,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteOrderItem: async (itemId, orderId) => {
     set({ isLoading: true, error: null });
     try {
+      const orders = get().orders;
+      const order = orders.find((o: Order) =>
+        o.order_items?.some((item: any) => item.id === itemId)
+      );
+      const item = order?.order_items?.find((i: any) => i.id === itemId);
       await deleteOrderItem(itemId);
+      if (item) {
+        const presentationName = item?.product_presentations?.name || '';
+        await addOrderHistory(orderId, 'removed', `${presentationName} x${item.quantity}`);
+      }
       const updatedOrder = await recalculateOrderTotal(orderId);
       set((state) => ({
         orders: state.orders.map((order) =>
@@ -370,6 +386,29 @@ export const useAppStore = create<AppState>((set, get) => ({
       await get().loadFinanceMetrics();
     } catch (error: unknown) {
       console.error('deleteOrderItem failed:', error);
+      set({ error: (error as Error).message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  updateManualTotal: async (orderId, manualTotal, reason) => {
+    set({ isLoading: true, error: null });
+    try {
+      const orders = get().orders;
+      const order = orders.find((o: Order) => o.id === orderId);
+      const oldTotal = order?.manual_total ?? order?.total_amount ?? 0;
+      await updateManualTotal(orderId, manualTotal, reason);
+      await addOrderHistory(orderId, 'price_modified', `Precio modificado\nAnterior: $${oldTotal}\nNuevo: $${manualTotal}\n\nMotivo:\n${reason}`);
+      const updatedOrder = await recalculateOrderTotal(orderId);
+      set((state) => ({
+        orders: state.orders.map((order) =>
+          order.id === orderId ? { ...updatedOrder, manual_total: manualTotal, manual_total_reason: reason } : order
+        ),
+      }));
+      await get().loadFinanceMetrics();
+    } catch (error: unknown) {
+      console.error('updateManualTotal failed:', error);
       set({ error: (error as Error).message });
       throw error;
     } finally {

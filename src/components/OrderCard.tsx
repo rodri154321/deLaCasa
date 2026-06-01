@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { safeToFixed } from '../utils/formatters';
 import type { Order, OrderStatus, PaymentStatus, PaymentMethod } from '../services/database';
+import { fetchOrderHistory } from '../services/orderService';
 
 interface OrderCardProps {
   order: Order;
   onRefresh: () => void;
 }
+
+const PRICE_REASONS = ['Descuento', 'Promoción', 'Mayorista', 'Pedido especial', 'Otro'];
 
 export default function OrderCard({ order, onRefresh }: OrderCardProps) {
   const products = useAppStore((state) => state.products);
@@ -15,6 +18,7 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
   const deleteOrderItem = useAppStore((state) => state.deleteOrderItem);
   const updateOrderStatus = useAppStore((state) => state.updateOrderStatus);
   const updatePaymentStatus = useAppStore((state) => state.updatePaymentStatus);
+  const updateManualTotal = useAppStore((state) => state.updateManualTotal);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
@@ -23,6 +27,16 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
   const [itemQuantity, setItemQuantity] = useState(1);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editQuantity, setEditQuantity] = useState(1);
+  const [orderHistory, setOrderHistory] = useState<any[]>([]);
+  const [showManualPrice, setShowManualPrice] = useState(false);
+  const [manualPriceValue, setManualPriceValue] = useState('');
+  const [manualPriceReason, setManualPriceReason] = useState('');
+
+  React.useEffect(() => {
+    if (isExpanded) {
+      fetchOrderHistory(order.id).then(setOrderHistory).catch(console.error);
+    }
+  }, [isExpanded, order.id]);
 
   const handleStatusChange = async (newStatus: OrderStatus) => {
     if (newStatus === order.status) return;
@@ -164,6 +178,23 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
     }
   };
 
+  const handleManualPrice = async () => {
+    const price = parseFloat(manualPriceValue);
+    if (isNaN(price) || price < 0) return;
+    setIsUpdating(true);
+    try {
+      await updateManualTotal(order.id, price, manualPriceReason || 'Sin motivo');
+      setShowManualPrice(false);
+      setManualPriceValue('');
+      setManualPriceReason('');
+      onRefresh();
+    } catch (error) {
+      console.error('Failed to update manual price:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const getPresentationsForProduct = (productId: string) => {
     const product = products.find(p => p.id === productId);
     return product?.product_presentations || [];
@@ -178,6 +209,9 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
   };
 
   const orderItems = (order as any).order_items || [];
+  const calculatedTotal = order.total_amount || 0;
+  const finalTotal = order.manual_total ?? calculatedTotal;
+  const hasManualPrice = order.manual_total !== null;
 
   return (
     <div className="w-full min-w-0 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-200 group">
@@ -201,10 +235,10 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
             </div>
           </div>
 
-          {/* Mobile: Stack vertically, Desktop: Horizontal */}
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3 sm:space-x-0 sm:ml-4">
-            <div className="flex items-center justify-between sm:justify-end gap-3">
-              <p className="text-lg md:text-xl font-bold text-amber-600">${safeToFixed(order.total_amount)}</p>
+{/* Mobile: Stack vertically, Desktop: Horizontal */}
+           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3 sm:space-x-0 sm:ml-4">
+             <div className="flex items-center justify-between sm:justify-end gap-3">
+               <p className={`text-lg md:text-xl font-bold ${hasManualPrice ? 'text-emerald-600' : 'text-amber-600'}`}>${safeToFixed(finalTotal)}</p>
 
               {/* Expand Button - Mobile first */}
               <button
@@ -501,9 +535,23 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
                   <span className="text-sm font-mono text-gray-800 bg-gray-100 px-2 py-1 rounded">{order.id.slice(-8)}</span>
                 </div>
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm font-medium text-gray-600">Total:</span>
-                  <span className="text-lg font-bold text-amber-600">${safeToFixed(order.total_amount)}</span>
+                  <span className="text-sm font-medium text-gray-600">Productos:</span>
+                  <span className="text-sm font-semibold text-gray-800">${safeToFixed(calculatedTotal)}</span>
                 </div>
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-sm font-medium text-gray-600">Precio final:</span>
+                  <span className={`text-lg font-bold ${hasManualPrice ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    ${safeToFixed(finalTotal)}
+                  </span>
+                </div>
+                {hasManualPrice && (
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-xs text-gray-500">Diferencia:</span>
+                    <span className="text-xs font-semibold text-red-600">
+                      -${safeToFixed(calculatedTotal - finalTotal)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -516,6 +564,75 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
                   <span className="text-sm text-gray-800">{new Date(order.updated_at).toLocaleString('es-ES')}</span>
                 </div>
               </div>
+            </div>
+
+            {/* Manual Price Editing */}
+            <div className="border-t border-gray-200 pt-4 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  {hasManualPrice && (
+                    <p className="text-xs text-gray-600">Motivo: <span className="font-semibold">{order.manual_total_reason}</span></p>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowManualPrice(true);
+                    setManualPriceValue(String(finalTotal));
+                  }}
+                  disabled={isUpdating}
+                  className="w-full sm:w-auto px-3 py-1.5 text-xs bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 transition-all duration-200"
+                >
+                  Modificar precio final
+                </button>
+              </div>
+
+              {showManualPrice && (
+                <div className="mt-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">Nuevo precio total</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={manualPriceValue}
+                        onChange={(e) => setManualPriceValue(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">Motivo</label>
+                      <select
+                        value={manualPriceReason}
+                        onChange={(e) => setManualPriceReason(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                      >
+                        <option value="">Seleccionar motivo</option>
+                        {PRICE_REASONS.map(reason => (
+                          <option key={reason} value={reason}>{reason}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => setShowManualPrice(false)}
+                        disabled={isUpdating}
+                        className="px-3 py-2 text-gray-600 hover:text-gray-800 text-sm"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleManualPrice}
+                        disabled={isUpdating || !manualPriceValue}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 transition-all duration-200"
+                      >
+                        Guardar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Timestamps */}
@@ -537,6 +654,23 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
                       <span className="font-medium text-gray-800">{new Date(order.paid_at).toLocaleString('es-ES')}</span>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Order History */}
+            {orderHistory.length > 0 && (
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Historial de Cambios</h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {orderHistory.map((h) => (
+                    <div key={h.id} className="flex items-center gap-3 text-xs">
+                      <div className={`w-2 h-2 rounded-full ${h.action_type === 'added' ? 'bg-green-500' : h.action_type === 'removed' ? 'bg-red-500' : h.action_type === 'price_modified' ? 'bg-purple-500' : 'bg-blue-500'}`}></div>
+                      <span className="text-gray-600 capitalize">{h.action_type}:</span>
+                      <span className="font-medium text-gray-800">{h.description}</span>
+                      <span className="text-gray-500 ml-auto">{new Date(h.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

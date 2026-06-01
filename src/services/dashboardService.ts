@@ -73,7 +73,7 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
   try {
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
-      .select('total_amount')
+      .select('total_amount,manual_total')
       .eq('payment_status', 'paid');
 
     if (ordersError) {
@@ -91,7 +91,11 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
       return { total_sales: 0, gross_profit: 0, total_cost: 0, net_profit: 0 };
     }
 
-    const total_sales = (orders || []).reduce((sum, order) => sum + toNumber(order.total_amount), 0);
+    const calculateEffectiveTotal = (orders: any[]) => {
+      return orders.reduce((sum, order) => sum + toNumber(order.manual_total ?? order.total_amount), 0);
+    };
+
+    const total_sales = calculateEffectiveTotal(orders || []);
     const gross_profit = (items || []).reduce((sum, item) => sum + toNumber(item.profit), 0);
     const total_cost = (items || []).reduce((sum, item) => sum + (toNumber(item.unit_cost) * toNumber(item.quantity)), 0);
 
@@ -262,7 +266,7 @@ export async function fetchFinanceMetrics(): Promise<FinanceMetrics> {
     // Get all paid orders to use as fallback
     const { data: allPaidOrders, error: allPaidOrdersError } = await supabase
       .from('orders')
-      .select('id,payment_status,paid_at,total_amount,status,created_at')
+      .select('id,payment_status,paid_at,total_amount,manual_total,status,created_at')
       .eq('payment_status', 'paid')
       .limit(100);
 
@@ -280,14 +284,14 @@ export async function fetchFinanceMetrics(): Promise<FinanceMetrics> {
 
     // Get revenue from date-filtered query
     const [revenueTodayResult, revenueMonthResult, unpaidResult, paidResult, averageTicketResult, expensesTodayResult, expensesMonthResult, revenueTotalResult] = await Promise.allSettled([
-      supabase.from('orders').select('total_amount').eq('payment_status', 'paid').gte('paid_at', todayStart).lt('paid_at', todayEnd),
-      supabase.from('orders').select('total_amount').eq('payment_status', 'paid').gte('paid_at', startOfMonth),
+      supabase.from('orders').select('total_amount,manual_total').eq('payment_status', 'paid').gte('paid_at', todayStart).lt('paid_at', todayEnd),
+      supabase.from('orders').select('total_amount,manual_total').eq('payment_status', 'paid').gte('paid_at', startOfMonth),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('payment_status', 'unpaid'),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('payment_status', 'paid'),
-      supabase.from('orders').select('total_amount').eq('payment_status', 'paid').gte('paid_at', startOfMonth),
+      supabase.from('orders').select('total_amount,manual_total').eq('payment_status', 'paid').gte('paid_at', startOfMonth),
       supabase.from('financial_transactions').select('amount').eq('type', 'expense').gte('created_at', todayStart).lt('created_at', todayEnd),
       supabase.from('financial_transactions').select('amount').eq('type', 'expense').gte('created_at', startOfMonth),
-      supabase.from('orders').select('total_amount').eq('payment_status', 'paid'),
+      supabase.from('orders').select('total_amount,manual_total').eq('payment_status', 'paid'),
     ]);
 
     // Get profit from order_items - all paid orders
@@ -301,31 +305,29 @@ export async function fetchFinanceMetrics(): Promise<FinanceMetrics> {
     console.log('[FINE DEBUG] Profit items count:', allProfitItems?.length);
     console.log('[FINE DEBUG] Expenses today query result:', expensesTodayResult.status === 'fulfilled' ? { count: expensesTodayResult.value.data?.length, error: expensesTodayResult.value.error } : 'rejected');
 
+    const calculateEffectiveTotal = (orders: any[]) => {
+      return orders.reduce((sum, order) => {
+        const raw = order.manual_total ?? order.total_amount;
+        return sum + toNumber(raw);
+      }, 0);
+    };
+
     // Revenue: use date-filtered result, fallback to all paid orders
     let revenue_today = 0;
     if (revenueTodayResult.status === 'fulfilled' && revenueTodayResult.value.data && revenueTodayResult.value.data.length > 0) {
-      revenue_today = revenueTodayResult.value.data.reduce((sum, order) => {
-        const raw = order.total_amount;
-        const parsed = toNumber(raw);
-        console.log('[FINE DEBUG] Revenue today - raw:', raw, 'parsed:', parsed, 'typeof raw:', typeof raw);
-        return sum + parsed;
-      }, 0);
+      revenue_today = calculateEffectiveTotal(revenueTodayResult.value.data);
     } else if ((allPaidOrders || []).length > 0) {
       // FALLBACK: Use all paid orders if date filter returns empty (paid_at might be null)
-      revenue_today = (allPaidOrders || []).slice(0, 5).reduce((sum, order) => sum + toNumber(order.total_amount), 0);
+      revenue_today = calculateEffectiveTotal((allPaidOrders || []).slice(0, 5));
       console.log('[FINE DEBUG] Revenue today FALLBACK using all paid orders:', revenue_today);
     }
 
     let revenue_month = 0;
     if (revenueMonthResult.status === 'fulfilled' && revenueMonthResult.value.data && revenueMonthResult.value.data.length > 0) {
-      revenue_month = revenueMonthResult.value.data.reduce((sum, order) => {
-        const raw = order.total_amount;
-        const parsed = toNumber(raw);
-        return sum + parsed;
-      }, 0);
+      revenue_month = calculateEffectiveTotal(revenueMonthResult.value.data);
     } else if ((allPaidOrders || []).length > 0) {
       // FALLBACK: Use all paid orders if date filter returns empty
-      revenue_month = (allPaidOrders || []).reduce((sum, order) => sum + toNumber(order.total_amount), 0);
+      revenue_month = calculateEffectiveTotal(allPaidOrders || []);
       console.log('[FINE DEBUG] Revenue month FALLBACK using all paid orders:', revenue_month);
     }
 
@@ -362,17 +364,17 @@ export async function fetchFinanceMetrics(): Promise<FinanceMetrics> {
     const paid_orders = paidResult.status === 'fulfilled' ? (paidResult.value.count || 0) : 0;
 
     const average_ticket = averageTicketResult.status === 'fulfilled' && averageTicketResult.value.data && averageTicketResult.value.data.length > 0
-      ? averageTicketResult.value.data.reduce((sum, order) => sum + toNumber(order.total_amount), 0) / averageTicketResult.value.data.length
-      : (allPaidOrders && allPaidOrders.length > 0 
-          ? (allPaidOrders.reduce((sum, o) => sum + toNumber(o.total_amount), 0) / allPaidOrders.length) 
+      ? calculateEffectiveTotal(averageTicketResult.value.data) / averageTicketResult.value.data.length
+      : (allPaidOrders && allPaidOrders.length > 0
+          ? calculateEffectiveTotal(allPaidOrders) / allPaidOrders.length
           : 0);
 
     const net_profit_today = revenue_today - expenses_today;
     const net_profit_month = revenue_month - expenses_month;
 
     const revenue_total = revenueTotalResult.status === 'fulfilled' && revenueTotalResult.value.data
-      ? revenueTotalResult.value.data.reduce((sum, order) => sum + toNumber(order.total_amount), 0)
-      : (allPaidOrders ? allPaidOrders.reduce((sum, o) => sum + toNumber(o.total_amount), 0) : 0);
+      ? calculateEffectiveTotal(revenueTotalResult.value.data)
+      : (allPaidOrders ? calculateEffectiveTotal(allPaidOrders) : 0);
 
     console.log('[FINE DEBUG] Final calculated metrics:', {
       revenue_today, revenue_month, revenue_total,

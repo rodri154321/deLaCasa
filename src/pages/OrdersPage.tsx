@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import CreateOrderForm from '../components/CreateOrderForm';
 import OrderCard from '../components/OrderCard';
 import { useAppStore } from '../store/useAppStore';
@@ -11,6 +11,8 @@ export default function OrdersPage() {
   const isLoading = useAppStore((state) => state.isLoading);
   const error = useAppStore((state) => state.error);
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [quickFilter, setQuickFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all');
 
@@ -26,7 +28,67 @@ export default function OrdersPage() {
     loadOrders().catch(console.error);
   }, [loadOrders]);
 
-  return (
+  const getTodayStart = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  };
+
+  const getThisWeekStart = () => {
+    const now = new Date();
+    const day = now.getDay();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+  };
+
+  const filteredOrders = useMemo(() => {
+    let result = [...orders];
+
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      result = result.filter(order =>
+        order.customer_name.toLowerCase().includes(search) ||
+        (order.customer_email && order.customer_email.toLowerCase().includes(search)) ||
+        order.id.toLowerCase().includes(search)
+      );
+    }
+
+    if (quickFilter !== 'all') {
+      const now = new Date();
+      switch (quickFilter) {
+        case 'today':
+          const todayStart = getTodayStart();
+          result = result.filter(order => new Date(order.created_at) >= todayStart);
+          break;
+        case 'week':
+          const weekStart = getThisWeekStart();
+          result = result.filter(order => new Date(order.created_at) >= weekStart);
+          break;
+        case 'delivered':
+          result = result.filter(order => order.status === 'delivered');
+          break;
+        case 'pending':
+          result = result.filter(order => order.status === 'pending');
+          break;
+        case 'paid':
+          result = result.filter(order => order.payment_status === 'paid');
+          break;
+        case 'unpaid':
+          result = result.filter(order => order.payment_status === 'unpaid');
+          break;
+      }
+    }
+
+    result = result.filter(order =>
+      statusFilter === 'all' || order.status === statusFilter
+    );
+
+    result = result.filter(order =>
+      paymentFilter === 'all' || order.payment_status === paymentFilter
+    );
+
+    return result;
+  }, [orders, searchTerm, quickFilter, statusFilter, paymentFilter]);
+
+return (
     <div className="w-full min-w-0 space-y-6 md:space-y-8">
       {/* Header */}
       <div className="text-center px-1">
@@ -46,32 +108,96 @@ export default function OrdersPage() {
               <p className="text-gray-600 text-sm">Historial de órdenes procesadas</p>
             </div>
 
-            {/* Filters */}
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
-                className="min-w-0 flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
+            {/* Quick Filters */}
+            <div className="flex flex-wrap items-center gap-1 w-full sm:w-auto">
+              <button
+                onClick={() => setQuickFilter('all')}
+                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
               >
-                <option value="all">📊 Todos los estados</option>
-                <option value="pending">⏳ Pendientes</option>
-                <option value="preparing">👨‍🍳 Preparando</option>
-                <option value="ready">✅ Listas</option>
-                <option value="delivered">🚚 Entregadas</option>
-                <option value="cancelled">❌ Canceladas</option>
-              </select>
-
-              <select
-                value={paymentFilter}
-                onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | 'all')}
-                className="min-w-0 flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
+                Todas
+              </button>
+              <button
+                onClick={() => setQuickFilter('pending')}
+                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
               >
-                <option value="all">💰 Todos los pagos</option>
-                <option value="unpaid">❌ Impagos</option>
-                <option value="partial">⚠️ Parciales</option>
-                <option value="paid">✅ Pagados</option>
-              </select>
+                Pendientes
+              </button>
+              <button
+                onClick={() => setQuickFilter('delivered')}
+                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'delivered' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                Entregadas
+              </button>
+              <button
+                onClick={() => setQuickFilter('paid')}
+                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'paid' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                Pagadas
+              </button>
+              <button
+                onClick={() => setQuickFilter('unpaid')}
+                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'unpaid' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                Impagas
+              </button>
+              <button
+                onClick={() => setQuickFilter('today')}
+                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'today' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                Hoy
+              </button>
+              <button
+                onClick={() => setQuickFilter('week')}
+                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'week' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                Semana
+              </button>
             </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mt-4">
+            <div className="relative max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar por cliente, email o ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              />
+            </div>
+          </div>
+
+          {/* Column Filters */}
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
+              className="min-w-0 flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
+            >
+              <option value="all">📊 Todos los estados</option>
+              <option value="pending">⏳ Pendientes</option>
+              <option value="preparing">👨‍🍳 Preparando</option>
+              <option value="ready">✅ Listas</option>
+              <option value="delivered">🚚 Entregadas</option>
+              <option value="cancelled">❌ Canceladas</option>
+            </select>
+
+            <select
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | 'all')}
+              className="min-w-0 flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
+            >
+              <option value="all">💰 Todos los pagos</option>
+              <option value="unpaid">❌ Impagos</option>
+              <option value="partial">⚠️ Parciales</option>
+              <option value="paid">✅ Pagados</option>
+            </select>
           </div>
         </div>
 
@@ -97,22 +223,15 @@ export default function OrdersPage() {
                 </div>
               ))}
             </div>
-          ) : orders.length > 0 ? (
+          ) : filteredOrders.length > 0 ? (
             <div className="space-y-4">
-              {orders
-                .filter(order =>
-                  statusFilter === 'all' || order.status === statusFilter
-                )
-                .filter(order =>
-                  paymentFilter === 'all' || order.payment_status === paymentFilter
-                )
-                .map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    onRefresh={refreshOrders}
-                  />
-                ))}
+              {filteredOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onRefresh={refreshOrders}
+                />
+              ))}
             </div>
           ) : (
             <div className="text-center py-16">
