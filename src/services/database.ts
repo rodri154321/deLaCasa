@@ -29,6 +29,19 @@ export interface Order {
   paid_at?: string | null;
   created_at: string;
   updated_at: string;
+  order_items?: Array<{
+    id: string;
+    product_id: string;
+    presentation_id: string;
+    quantity: number;
+    unit_price: number;
+    unit_cost?: number;
+    subtotal?: number;
+    profit?: number;
+    created_at: string;
+    products?: { id: string; name: string };
+    product_presentations?: { id: string; name: string; quantity: number; sale_price?: number };
+  }>;
 }
 
 export interface Product {

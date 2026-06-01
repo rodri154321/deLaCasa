@@ -9,10 +9,20 @@ interface OrderCardProps {
 }
 
 export default function OrderCard({ order, onRefresh }: OrderCardProps) {
+  const products = useAppStore((state) => state.products);
+  const addOrderItem = useAppStore((state) => state.addOrderItem);
+  const updateOrderItem = useAppStore((state) => state.updateOrderItem);
+  const deleteOrderItem = useAppStore((state) => state.deleteOrderItem);
   const updateOrderStatus = useAppStore((state) => state.updateOrderStatus);
   const updatePaymentStatus = useAppStore((state) => state.updatePaymentStatus);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showAddItem, setShowAddItem] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedPresentation, setSelectedPresentation] = useState('');
+  const [itemQuantity, setItemQuantity] = useState(1);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editQuantity, setEditQuantity] = useState(1);
 
   const handleStatusChange = async (newStatus: OrderStatus) => {
     if (newStatus === order.status) return;
@@ -104,6 +114,70 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
       default: return '💰';
     }
   };
+
+  const handleAddItem = async () => {
+    if (!selectedProduct || !selectedPresentation) return;
+    setIsUpdating(true);
+    try {
+      await addOrderItem(order.id, {
+        product_id: selectedProduct,
+        presentation_id: selectedPresentation,
+        quantity: itemQuantity,
+        unit_price: products.find(p => p.id === selectedProduct)?.product_presentations?.find((pp: any) => pp.id === selectedPresentation)?.sale_price || 0,
+      });
+      setShowAddItem(false);
+      setSelectedProduct('');
+      setSelectedPresentation('');
+      setItemQuantity(1);
+      onRefresh();
+    } catch (error) {
+      console.error('Failed to add item:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) return;
+    setIsUpdating(true);
+    try {
+      await updateOrderItem(itemId, newQuantity);
+      setEditingItemId(null);
+      onRefresh();
+    } catch (error) {
+      console.error('Failed to update quantity:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    if (!confirm('¿Eliminar este producto de la orden?')) return;
+    setIsUpdating(true);
+    try {
+      await deleteOrderItem(itemId, order.id);
+      onRefresh();
+    } catch (error) {
+      console.error('Failed to delete item:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const getPresentationsForProduct = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    return product?.product_presentations || [];
+  };
+
+  const getUnitPrice = (presentationId: string) => {
+    for (const p of products) {
+      const pp = p.product_presentations?.find((pr: any) => pr.id === presentationId);
+      if (pp) return pp.sale_price || 0;
+    }
+    return 0;
+  };
+
+  const orderItems = (order as any).order_items || [];
 
   return (
     <div className="w-full min-w-0 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-200 group">
@@ -294,6 +368,132 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
           </div>
 
           <div className="border-t border-gray-200 pt-4">
+            {/* Order Items */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-gray-700">Productos</h4>
+                <button
+                  onClick={() => setShowAddItem(true)}
+                  disabled={isUpdating}
+                  className="text-xs bg-gradient-to-r from-amber-500 to-amber-600 text-white px-3 py-1.5 rounded-lg font-medium hover:from-amber-600 hover:to-amber-700 disabled:opacity-50 transition-all duration-200 transform hover:scale-105"
+                >
+                  + Agregar producto
+                </button>
+              </div>
+
+              {orderItems.length > 0 ? (
+                <div className="space-y-2">
+                  {orderItems.map((item: any) => (
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {item.products?.name || 'Producto'} - {item.product_presentations?.name || ''}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-gray-600 mt-1">
+                          <span>${safeToFixed(item.unit_price)}</span>
+                          {editingItemId === item.id ? (
+                            <input
+                              type="number"
+                              min="1"
+                              value={editQuantity}
+                              onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
+                              onBlur={() => handleUpdateQuantity(item.id, editQuantity)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleUpdateQuantity(item.id, editQuantity)}
+                              className="w-16 px-2 py-1 border border-gray-300 rounded text-center"
+                              autoFocus
+                            />
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setEditingItemId(item.id);
+                                setEditQuantity(item.quantity);
+                              }}
+                              className="font-semibold hover:text-amber-600 transition-colors"
+                            >
+                              {item.quantity} unidades
+                            </button>
+                          )}
+                          <span className="font-semibold">${safeToFixed(item.subtotal || item.unit_price * item.quantity)}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteItem(item.id)}
+                        disabled={isUpdating}
+                        className="text-red-600 hover:text-red-700 disabled:opacity-50 ml-2 p-1"
+                        title="Eliminar producto"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 italic">Sin productos en esta orden</p>
+              )}
+
+              {/* Add Item Form */}
+              {showAddItem && (
+                <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <select
+                        value={selectedProduct}
+                        onChange={(e) => setSelectedProduct(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500"
+                      >
+                        <option value="">Seleccionar producto</option>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={selectedPresentation}
+                        onChange={(e) => setSelectedPresentation(e.target.value)}
+                        disabled={!selectedProduct}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
+                      >
+                        <option value="">Seleccionar presentación</option>
+                        {getPresentationsForProduct(selectedProduct).map((pp: any) => (
+                          <option key={pp.id} value={pp.id}>{pp.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">Cantidad</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={itemQuantity}
+                          onChange={(e) => setItemQuantity(parseInt(e.target.value) || 1)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setShowAddItem(false)}
+                          disabled={isUpdating}
+                          className="px-3 py-2 text-gray-600 hover:text-gray-800 text-sm"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={handleAddItem}
+                          disabled={isUpdating || !selectedProduct || !selectedPresentation}
+                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg text-sm font-medium hover:from-amber-600 hover:to-amber-700 disabled:opacity-50 transition-all duration-200"
+                        >
+                          Agregar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Order Info Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div className="space-y-2">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -340,20 +540,6 @@ export default function OrderCard({ order, onRefresh }: OrderCardProps) {
                 </div>
               </div>
             )}
-
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 text-blue-500 mt-0.5">
-                  <svg fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-blue-800 font-medium">Próximamente</p>
-                  <p className="text-xs text-blue-600 mt-1">Los detalles completos de productos estarán disponibles en futuras actualizaciones del sistema.</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}

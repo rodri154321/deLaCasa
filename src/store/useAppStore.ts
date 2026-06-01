@@ -2,7 +2,7 @@ import create from 'zustand';
 import { fetchProducts, createProduct, updateProduct, deleteProduct, ProductPayload } from '../services/productService';
 import { fetchIngredients, createIngredient, updateIngredient, deleteIngredient } from '../services/stockService';
 import { fetchRecipes, createRecipe, updateRecipe, deleteRecipe } from '../services/recipeService';
-import { createOrderWithItems, fetchOrders, updateOrderStatus, updatePaymentStatus } from '../services/orderService';
+import { createOrderWithItems, fetchOrders, updateOrderStatus, updatePaymentStatus, addOrderItem, updateOrderItemQuantity, deleteOrderItem, recalculateOrderTotal } from '../services/orderService';
 import { fetchFinanceMetrics, FinanceMetrics } from '../services/dashboardService';
 import type {
   Product,
@@ -41,6 +41,14 @@ type AppState = {
   ) => Promise<string>;
   updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
   updatePaymentStatus: (orderId: string, paymentStatus: Order['payment_status'], paymentMethod?: Order['payment_method']) => Promise<void>;
+  addOrderItem: (orderId: string, item: {
+    product_id: string;
+    presentation_id: string;
+    quantity: number;
+    unit_price: number;
+  }) => Promise<void>;
+  updateOrderItem: (itemId: string, quantity: number) => Promise<void>;
+  deleteOrderItem: (itemId: string, orderId: string) => Promise<void>;
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -301,6 +309,69 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (error: unknown) {
       console.error('updatePaymentStatus failed:', error);
       set({ error: (error as Error).message });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  addOrderItem: async (orderId, item) => {
+    set({ isLoading: true, error: null });
+    try {
+      await addOrderItem(orderId, item);
+      const updatedOrder = await recalculateOrderTotal(orderId);
+      set((state) => ({
+        orders: state.orders.map((order) =>
+          order.id === orderId ? updatedOrder : order
+        ),
+      }));
+      await get().loadFinanceMetrics();
+    } catch (error: unknown) {
+      console.error('addOrderItem failed:', error);
+      set({ error: (error as Error).message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  updateOrderItem: async (itemId, quantity) => {
+    set({ isLoading: true, error: null });
+    try {
+      await updateOrderItemQuantity(itemId, quantity);
+      const orders = get().orders;
+      const order = orders.find((o: Order) =>
+        o.order_items?.some((item: any) => item.id === itemId)
+      );
+      if (order) {
+        const updatedOrder = await recalculateOrderTotal(order.id);
+        set((state) => ({
+          orders: state.orders.map((o) =>
+            o.id === order.id ? updatedOrder : o
+          ),
+        }));
+        await get().loadFinanceMetrics();
+      }
+    } catch (error: unknown) {
+      console.error('updateOrderItem failed:', error);
+      set({ error: (error as Error).message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  deleteOrderItem: async (itemId, orderId) => {
+    set({ isLoading: true, error: null });
+    try {
+      await deleteOrderItem(itemId);
+      const updatedOrder = await recalculateOrderTotal(orderId);
+      set((state) => ({
+        orders: state.orders.map((order) =>
+          order.id === orderId ? updatedOrder : order
+        ),
+      }));
+      await get().loadFinanceMetrics();
+    } catch (error: unknown) {
+      console.error('deleteOrderItem failed:', error);
+      set({ error: (error as Error).message });
+      throw error;
     } finally {
       set({ isLoading: false });
     }
