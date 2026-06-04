@@ -1,20 +1,25 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import CreateOrderForm from '../components/CreateOrderForm';
 import OrderCard from '../components/OrderCard';
 import { useAppStore } from '../store/useAppStore';
-import { safeToFixed } from '../utils/formatters';
 import type { OrderStatus, PaymentStatus } from '../services/database';
+
+type DateFilter = 'all' | 'today' | 'week';
 
 export default function OrdersPage() {
   const orders = useAppStore((state) => state.orders);
+  const products = useAppStore((state) => state.products);
   const loadOrders = useAppStore((state) => state.loadOrders);
+  const loadProducts = useAppStore((state) => state.loadProducts);
   const isLoading = useAppStore((state) => state.isLoading);
   const error = useAppStore((state) => state.error);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [quickFilter, setQuickFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [productFilter, setProductFilter] = useState('all');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const refreshOrders = async () => {
     try {
@@ -26,7 +31,27 @@ export default function OrdersPage() {
 
   useEffect(() => {
     loadOrders().catch(console.error);
-  }, [loadOrders]);
+    loadProducts().catch(console.error);
+  }, [loadOrders, loadProducts]);
+
+  useEffect(() => {
+    if (!isCreateModalOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsCreateModalOpen(false);
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isCreateModalOpen]);
 
   const getTodayStart = () => {
     const now = new Date();
@@ -44,62 +69,54 @@ export default function OrdersPage() {
 
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
-      result = result.filter(order =>
+      result = result.filter((order) =>
         order.customer_name.toLowerCase().includes(search) ||
         (order.customer_email && order.customer_email.toLowerCase().includes(search)) ||
         order.id.toLowerCase().includes(search)
       );
     }
 
-    if (quickFilter !== 'all') {
-      const now = new Date();
-      switch (quickFilter) {
+    if (dateFilter !== 'all') {
+      switch (dateFilter) {
         case 'today':
-          const todayStart = getTodayStart();
-          result = result.filter(order => new Date(order.created_at) >= todayStart);
+          result = result.filter((order) => new Date(order.created_at) >= getTodayStart());
           break;
         case 'week':
-          const weekStart = getThisWeekStart();
-          result = result.filter(order => new Date(order.created_at) >= weekStart);
-          break;
-        case 'delivered':
-          result = result.filter(order => order.status === 'delivered');
-          break;
-        case 'pending':
-          result = result.filter(order => order.status === 'pending');
-          break;
-        case 'paid':
-          result = result.filter(order => order.payment_status === 'paid');
-          break;
-        case 'unpaid':
-          result = result.filter(order => order.payment_status === 'unpaid');
+          result = result.filter((order) => new Date(order.created_at) >= getThisWeekStart());
           break;
       }
     }
 
-    result = result.filter(order =>
+    result = result.filter((order) =>
       statusFilter === 'all' || order.status === statusFilter
     );
 
-    result = result.filter(order =>
+    result = result.filter((order) =>
       paymentFilter === 'all' || order.payment_status === paymentFilter
     );
 
-    return result;
-  }, [orders, searchTerm, quickFilter, statusFilter, paymentFilter]);
+    result = result.filter((order) =>
+      productFilter === 'all' ||
+      (order.order_items || []).some((item) => item.product_id === productFilter)
+    );
 
-return (
+    return result;
+  }, [orders, searchTerm, statusFilter, paymentFilter, dateFilter, productFilter]);
+
+  const activeProducts = useMemo(
+    () => products
+      .filter((product) => product.active !== false)
+      .sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [products]
+  );
+
+  return (
     <div className="w-full min-w-0 space-y-6 md:space-y-8">
-      {/* Header */}
       <div className="text-center px-1">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Gestión de Órdenes</h1>
         <p className="text-gray-600 text-sm md:text-base">Crea y administra las órdenes de tus clientes</p>
       </div>
 
-      {/* Create Order Form */}
-      <CreateOrderForm />
-
-      {/* Recent Orders */}
       <div className="card">
         <div className="card-header">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -107,55 +124,8 @@ return (
               <h2 className="text-xl font-semibold text-gray-900">Órdenes Recientes</h2>
               <p className="text-gray-600 text-sm">Historial de órdenes procesadas</p>
             </div>
-
-            {/* Quick Filters */}
-            <div className="flex flex-wrap items-center gap-1 w-full sm:w-auto">
-              <button
-                onClick={() => setQuickFilter('all')}
-                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                Todas
-              </button>
-              <button
-                onClick={() => setQuickFilter('pending')}
-                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                Pendientes
-              </button>
-              <button
-                onClick={() => setQuickFilter('delivered')}
-                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'delivered' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                Entregadas
-              </button>
-              <button
-                onClick={() => setQuickFilter('paid')}
-                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'paid' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                Pagadas
-              </button>
-              <button
-                onClick={() => setQuickFilter('unpaid')}
-                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'unpaid' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                Impagas
-              </button>
-              <button
-                onClick={() => setQuickFilter('today')}
-                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'today' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                Hoy
-              </button>
-              <button
-                onClick={() => setQuickFilter('week')}
-                className={`px-2 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${quickFilter === 'week' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                Semana
-              </button>
-            </div>
           </div>
 
-          {/* Search Bar */}
           <div className="mt-4">
             <div className="relative max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -167,36 +137,54 @@ return (
                 type="text"
                 placeholder="Buscar por cliente, email o ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(event) => setSearchTerm(event.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               />
             </div>
           </div>
 
-          {/* Column Filters */}
-          <div className="flex flex-wrap items-center gap-2 mt-3">
+          <div className="grid grid-cols-1 gap-2 mt-3 sm:grid-cols-2 xl:grid-cols-4">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
-              className="min-w-0 flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
+              onChange={(event) => setStatusFilter(event.target.value as OrderStatus | 'all')}
+              className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
             >
-              <option value="all">📊 Todos los estados</option>
-              <option value="pending">⏳ Pendientes</option>
-              <option value="preparing">👨‍🍳 Preparando</option>
-              <option value="ready">✅ Listas</option>
-              <option value="delivered">🚚 Entregadas</option>
-              <option value="cancelled">❌ Canceladas</option>
+              <option value="all">Estado: Todos</option>
+              <option value="pending">Estado: Pendientes</option>
+              <option value="delivered">Estado: Entregadas</option>
             </select>
 
             <select
               value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | 'all')}
-              className="min-w-0 flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
+              onChange={(event) => setPaymentFilter(event.target.value as PaymentStatus | 'all')}
+              className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
             >
-              <option value="all">💰 Todos los pagos</option>
-              <option value="unpaid">❌ Impagos</option>
-              <option value="partial">⚠️ Parciales</option>
-              <option value="paid">✅ Pagados</option>
+              <option value="all">Pago: Todos</option>
+              <option value="paid">Pago: Pagadas</option>
+              <option value="unpaid">Pago: Impagas</option>
+            </select>
+
+            <select
+              value={dateFilter}
+              onChange={(event) => setDateFilter(event.target.value as DateFilter)}
+              className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 hover:border-amber-400"
+            >
+              <option value="all">Fecha: Todas</option>
+              <option value="today">Fecha: Hoy</option>
+              <option value="week">Fecha: Esta semana</option>
+            </select>
+
+            <select
+              value={productFilter}
+              onChange={(event) => setProductFilter(event.target.value)}
+              className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#8e9a6d] focus:border-[#8e9a6d] transition-all duration-200 hover:border-[#8e9a6d]"
+            >
+              <option value="all">Producto: Todos los productos</option>
+              {activeProducts.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -215,11 +203,11 @@ return (
 
           {isLoading ? (
             <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:space-x-4 p-4 bg-gray-50 rounded-xl">
-                  <div className="loading-skeleton h-4 w-32"></div>
-                  <div className="loading-skeleton h-4 w-24"></div>
-                  <div className="loading-skeleton h-6 w-16 rounded-full"></div>
+              {[1, 2, 3, 4, 5].map((item) => (
+                <div key={item} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:space-x-4 p-4 bg-gray-50 rounded-xl">
+                  <div className="loading-skeleton h-4 w-32" />
+                  <div className="loading-skeleton h-4 w-24" />
+                  <div className="loading-skeleton h-6 w-16 rounded-full" />
                 </div>
               ))}
             </div>
@@ -243,7 +231,7 @@ return (
               <h3 className="text-xl font-semibold text-gray-900 mb-3">No hay órdenes aún</h3>
               <p className="text-gray-600 mb-8 max-w-md mx-auto">Las órdenes que crees aparecerán aquí para que puedas gestionarlas fácilmente.</p>
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => setIsCreateModalOpen(true)}
                 className="btn-primary"
               >
                 Crear Primera Orden
@@ -252,6 +240,68 @@ return (
           )}
         </div>
       </div>
+
+      <button
+        type="button"
+        className="orders-create-fab"
+        onClick={() => setIsCreateModalOpen(true)}
+        aria-label="Crear nueva orden"
+        title="Crear nueva orden"
+      >
+        <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M12 5v14m7-7H5" />
+        </svg>
+      </button>
+
+      {isCreateModalOpen && (
+        <div
+          className="orders-create-modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsCreateModalOpen(false);
+            }
+          }}
+        >
+          <section
+            className="orders-create-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-order-modal-title"
+          >
+            <header className="orders-create-modal-header">
+              <div>
+                <h2 id="create-order-modal-title">Crear Nueva Orden</h2>
+                <p>Completa los datos del pedido y confirma la orden.</p>
+              </div>
+              <button
+                type="button"
+                className="orders-create-modal-close"
+                onClick={() => setIsCreateModalOpen(false)}
+                aria-label="Cerrar modal"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </header>
+
+            <div className="orders-create-modal-body">
+              <CreateOrderForm />
+            </div>
+
+            <footer className="orders-create-modal-footer">
+              <button
+                type="button"
+                className="btn-secondary w-full sm:w-auto"
+                onClick={() => setIsCreateModalOpen(false)}
+              >
+                Cancelar
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

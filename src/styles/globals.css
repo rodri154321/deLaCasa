@@ -133,3 +133,56 @@
 .modal-footer {
   @apply flex flex-col-reverse gap-3 border-t border-[#e3e8d6] bg-[#fbfaf5] px-0 pt-5 sm:flex-row sm:justify-end;
 }
+
+.orders-create-fab {
+  @apply fixed z-40 h-14 w-14 rounded-full bg-[#8e9a6d] p-0 text-white shadow-2xl shadow-[#344033]/25 transition-all duration-200 hover:-translate-y-1 hover:bg-[#7a865f] hover:shadow-[#6b7c54]/35 focus:outline-none focus:ring-4 focus:ring-[#8e9a6d]/25;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.orders-create-modal-overlay {
+  @apply fixed inset-0 z-[90] flex min-w-0 items-center justify-center overflow-y-auto overflow-x-hidden bg-[#344033]/50 p-3 backdrop-blur-sm sm:p-4;
+}
+
+.orders-create-modal {
+  @apply flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl min-w-0 flex-col overflow-hidden rounded-2xl border border-[#d7dec4] bg-white shadow-2xl shadow-[#344033]/25 sm:max-h-[calc(100dvh-2rem)];
+}
+
+.orders-create-modal-header {
+  @apply flex shrink-0 items-start justify-between gap-3 border-b border-[#e3e8d6] bg-[#fbfaf5] px-4 py-4 md:px-6;
+}
+
+.orders-create-modal-header h2 {
+  @apply m-0 text-xl font-extrabold text-[#344033] md:text-2xl;
+}
+
+.orders-create-modal-header p {
+  @apply mt-1 text-sm text-[#6b7c54];
+}
+
+.orders-create-modal-close {
+  @apply h-10 min-h-10 w-10 shrink-0 rounded-full border border-[#d7dec4] bg-white p-0 text-[#6b7c54] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f5f5f0] hover:text-[#344033] focus:outline-none focus:ring-4 focus:ring-[#8e9a6d]/20;
+}
+
+.orders-create-modal-body {
+  @apply min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-white px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5;
+}
+
+.orders-create-modal-body > div {
+  @apply max-w-none;
+}
+
+.orders-create-modal-body .card {
+  @apply shadow-none hover:shadow-none;
+}
+
+.orders-create-modal-footer {
+  @apply flex shrink-0 justify-end border-t border-[#e3e8d6] bg-[#fbfaf5] px-4 py-3 md:px-6;
+}
+
+@media (min-width: 1025px) {
+  .orders-create-fab {
+    right: 2rem;
+    bottom: 2rem;
+  }
+}
