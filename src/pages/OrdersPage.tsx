@@ -1,10 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import CreateOrderForm from '../components/CreateOrderForm';
 import OrderCard from '../components/OrderCard';
 import { useAppStore } from '../store/useAppStore';
 import type { OrderStatus, PaymentStatus } from '../services/database';
 
 type DateFilter = 'all' | 'today' | 'week';
+
+type ProductionSummaryItem = {
+  key: string;
+  name: string;
+  quantity: number;
+};
 
 export default function OrdersPage() {
   const orders = useAppStore((state) => state.orders);
@@ -19,7 +25,10 @@ export default function OrdersPage() {
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [productFilter, setProductFilter] = useState('all');
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [hasLoadedInitialOrders, setHasLoadedInitialOrders] = useState(false);
+  const orderCountRef = useRef(orders.length);
 
   const refreshOrders = async () => {
     try {
@@ -30,9 +39,36 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    loadOrders().catch(console.error);
+    let isMounted = true;
+
+    loadOrders()
+      .catch(console.error)
+      .finally(() => {
+        if (isMounted) {
+          setHasLoadedInitialOrders(true);
+        }
+      });
     loadProducts().catch(console.error);
+
+    return () => {
+      isMounted = false;
+    };
   }, [loadOrders, loadProducts]);
+
+  useEffect(() => {
+    if (!hasLoadedInitialOrders) {
+      orderCountRef.current = orders.length;
+      return;
+    }
+
+    if (orders.length > orderCountRef.current) {
+      orderCountRef.current = orders.length;
+      loadOrders().catch(console.error);
+      return;
+    }
+
+    orderCountRef.current = orders.length;
+  }, [hasLoadedInitialOrders, loadOrders, orders.length]);
 
   useEffect(() => {
     if (!isCreateModalOpen) return;
@@ -110,6 +146,40 @@ export default function OrdersPage() {
     [products]
   );
 
+  const activeFilterCount = [
+    statusFilter !== 'all',
+    paymentFilter !== 'all',
+    dateFilter !== 'all',
+    productFilter !== 'all',
+  ].filter(Boolean).length;
+
+  const productionSummary = useMemo<ProductionSummaryItem[]>(() => {
+    const summary = new Map<string, ProductionSummaryItem>();
+
+    orders
+      .filter((order) => order.status !== 'delivered')
+      .forEach((order) => {
+        (order.order_items || []).forEach((item) => {
+          const key = item.presentation_id || item.product_id;
+          const name = item.product_presentations?.name || item.products?.name || 'Producto';
+          const quantity = Number(item.quantity || 0);
+
+          if (!key || quantity <= 0) return;
+
+          const existing = summary.get(key);
+          summary.set(key, {
+            key,
+            name,
+            quantity: (existing?.quantity || 0) + quantity,
+          });
+        });
+      });
+
+    return [...summary.values()]
+      .filter((item) => item.quantity > 0)
+      .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  }, [orders]);
+
   return (
     <div className="w-full min-w-0 space-y-6 md:space-y-8">
       <div className="text-center px-1">
@@ -143,49 +213,85 @@ export default function OrdersPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 mt-3 sm:grid-cols-2 xl:grid-cols-4">
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as OrderStatus | 'all')}
-              className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setIsFiltersOpen((current) => !current)}
+              className="w-full justify-between rounded-lg border border-[#d7dec4] bg-white px-3 py-2 text-sm font-bold text-[#344033] shadow-sm transition-all duration-200 hover:border-[#8e9a6d] hover:bg-[#fbfaf5] sm:w-auto sm:min-w-44"
+              aria-expanded={isFiltersOpen}
+              aria-controls="orders-filters-panel"
             >
-              <option value="all">Estado: Todos</option>
-              <option value="pending">Estado: Pendientes</option>
-              <option value="delivered">Estado: Entregadas</option>
-            </select>
+              <span className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-[#6b7c54]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M6 12h12M10 20h4" />
+                </svg>
+                Filtros
+                {activeFilterCount > 0 && (
+                  <span className="rounded-full bg-[#edf3e4] px-2 py-0.5 text-xs text-[#6b7c54]">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </span>
+              <svg
+                className={`h-4 w-4 text-[#6b7c54] transition-transform duration-200 ${isFiltersOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
 
-            <select
-              value={paymentFilter}
-              onChange={(event) => setPaymentFilter(event.target.value as PaymentStatus | 'all')}
-              className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
-            >
-              <option value="all">Pago: Todos</option>
-              <option value="paid">Pago: Pagadas</option>
-              <option value="unpaid">Pago: Impagas</option>
-            </select>
+            {isFiltersOpen && (
+              <div
+                id="orders-filters-panel"
+                className="mt-3 grid grid-cols-1 gap-2 rounded-xl border border-[#e3e8d6] bg-[#fbfaf5] p-3 sm:grid-cols-2 xl:grid-cols-4"
+              >
+                <select
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value as OrderStatus | 'all')}
+                  className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-400"
+                >
+                  <option value="all">Estado: Todos</option>
+                  <option value="pending">Estado: Pendientes</option>
+                  <option value="delivered">Estado: Entregadas</option>
+                </select>
 
-            <select
-              value={dateFilter}
-              onChange={(event) => setDateFilter(event.target.value as DateFilter)}
-              className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 hover:border-amber-400"
-            >
-              <option value="all">Fecha: Todas</option>
-              <option value="today">Fecha: Hoy</option>
-              <option value="week">Fecha: Esta semana</option>
-            </select>
+                <select
+                  value={paymentFilter}
+                  onChange={(event) => setPaymentFilter(event.target.value as PaymentStatus | 'all')}
+                  className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-400"
+                >
+                  <option value="all">Pago: Todos</option>
+                  <option value="paid">Pago: Pagadas</option>
+                  <option value="unpaid">Pago: Impagas</option>
+                </select>
 
-            <select
-              value={productFilter}
-              onChange={(event) => setProductFilter(event.target.value)}
-              className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#8e9a6d] focus:border-[#8e9a6d] transition-all duration-200 hover:border-[#8e9a6d]"
-            >
-              <option value="all">Producto: Todos los productos</option>
-              {activeProducts.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                </option>
-              ))}
-            </select>
+                <select
+                  value={dateFilter}
+                  onChange={(event) => setDateFilter(event.target.value as DateFilter)}
+                  className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 hover:border-amber-400"
+                >
+                  <option value="all">Fecha: Todas</option>
+                  <option value="today">Fecha: Hoy</option>
+                  <option value="week">Fecha: Esta semana</option>
+                </select>
+
+                <select
+                  value={productFilter}
+                  onChange={(event) => setProductFilter(event.target.value)}
+                  className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#8e9a6d] focus:border-[#8e9a6d] transition-all duration-200 hover:border-[#8e9a6d]"
+                >
+                  <option value="all">Producto: Todos los productos</option>
+                  {activeProducts.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
@@ -200,6 +306,35 @@ export default function OrdersPage() {
               </div>
             </div>
           )}
+
+          <section className="mb-5 rounded-2xl border border-[#d7dec4] bg-[#fbfaf5] p-4 shadow-sm">
+            <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">📦 Productos Pendientes</h3>
+                <p className="text-sm text-gray-600">Cantidades en órdenes no entregadas</p>
+              </div>
+            </div>
+
+            {productionSummary.length > 0 ? (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {productionSummary.map((item) => (
+                  <div
+                    key={item.key}
+                    className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-[#e3e8d6] bg-white px-3 py-2 shadow-sm"
+                  >
+                    <span className="min-w-0 truncate text-sm font-semibold text-[#344033]">{item.name}</span>
+                    <strong className="shrink-0 rounded-full bg-[#edf3e4] px-3 py-1 text-sm font-bold text-[#6b7c54]">
+                      {item.quantity}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed border-[#d7dec4] bg-white px-3 py-2 text-sm text-gray-500">
+                No hay productos pendientes.
+              </p>
+            )}
+          </section>
 
           {isLoading ? (
             <div className="space-y-4">
